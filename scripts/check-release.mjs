@@ -119,11 +119,25 @@ assert.match(
   trademarks,
   /does not grant\s+permission to use trade names, trademarks, service marks, or product names/u,
 );
-assert.equal(
-  JSON.stringify(lock).includes("registry.npmmirror.com"),
-  false,
-  "the public lockfile must not depend on a workstation-specific package mirror",
-);
+function usesForbiddenRegistry(value) {
+  if (typeof value !== "string") return false;
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return host === "npmmirror.com" || host.endsWith(".npmmirror.com");
+  } catch {
+    return false;
+  }
+}
+
+assert.equal(usesForbiddenRegistry("https://registry.npmmirror.com/example/-/example.tgz"), true);
+assert.equal(usesForbiddenRegistry("https://registry.npmjs.org/example?next=registry.npmmirror.com"), false);
+for (const [path, entry] of Object.entries(lock.packages)) {
+  assert.equal(
+    usesForbiddenRegistry(entry.resolved),
+    false,
+    `the public lockfile must not resolve ${path || "the root package"} through a workstation-specific mirror`,
+  );
+}
 
 for (const required of ["LICENSE", "NOTICE", "TRADEMARKS.md", "THIRD_PARTY_NOTICES.md", "SECURITY.md", "CONTRIBUTING.md"]) {
   assert.equal(manifest.files.includes(required), true, `${required} must be declared in package files`);
