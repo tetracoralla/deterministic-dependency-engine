@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dependency_engine": {
+      "command": "node",
+      "args": [
+        "./dist/adapters/mcp.js"
+      ],
+      "cwd": "."
+    }
+  }
+}

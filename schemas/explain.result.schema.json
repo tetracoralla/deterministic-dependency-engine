@@ -1,0 +1,198 @@
+{
+  "$id": "https://openadam.dev/dependency-engine/explain.result.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "const": "ok"
+            },
+            "kind": {
+              "type": "string",
+              "const": "blocked_explanation"
+            },
+            "target": {
+              "$ref": "#/definitions/DependencyNodeId"
+            },
+            "satisfied": {
+              "type": "boolean"
+            },
+            "blocked": {
+              "type": "boolean"
+            },
+            "direct_blockers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/DependencyNodeId"
+              }
+            },
+            "root_blockers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/DependencyNodeId"
+              }
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/DependencyNodeId"
+                }
+              }
+            },
+            "receipt": {
+              "$ref": "#/definitions/__schema0"
+            }
+          },
+          "required": [
+            "status",
+            "kind",
+            "target",
+            "satisfied",
+            "blocked",
+            "direct_blockers",
+            "root_blockers",
+            "paths",
+            "receipt"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "const": "ok"
+            },
+            "kind": {
+              "type": "string",
+              "const": "impact_explanation"
+            },
+            "changed": {
+              "$ref": "#/definitions/DependencyNodeId"
+            },
+            "affected": {
+              "$ref": "#/definitions/DependencyNodeId"
+            },
+            "reachable": {
+              "type": "boolean"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/DependencyNodeId"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt": {
+              "$ref": "#/definitions/__schema0"
+            }
+          },
+          "required": [
+            "status",
+            "kind",
+            "changed",
+            "affected",
+            "reachable",
+            "path",
+            "receipt"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "error"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {}
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "DependencyNodeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "__schema0": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "const": "dependency-engine"
+        },
+        "version": {
+          "type": "string",
+          "const": "0.1.0"
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "validate",
+            "resolve",
+            "impact",
+            "slice",
+            "explain"
+          ]
+        },
+        "graph_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "request_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "result_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "engine",
+        "version",
+        "operation",
+        "graph_hash",
+        "request_hash",
+        "result_hash"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

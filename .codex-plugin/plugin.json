@@ -1,0 +1,35 @@
+{
+  "name": "graph-dependency-solver",
+  "version": "0.1.0",
+  "description": "Gridlace provides deterministic dependency reasoning over declared graphs.",
+  "author": {
+    "name": "openAdam",
+    "url": "https://github.com/tetracoralla"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/tetracoralla/Gridlace",
+  "keywords": [
+    "dependencies",
+    "graph",
+    "planning",
+    "impact-analysis",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Gridlace",
+    "shortDescription": "Resolve blockers, order work, and trace impact.",
+    "longDescription": "Gridlace computes deterministic dependency closure, ready work, execution layers, blockers, impact, relevant subgraphs, and path explanations over relations you declare.",
+    "developerName": "openAdam",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "defaultPrompt": [
+      "What must be completed before this target is ready?",
+      "What will changing this node affect?",
+      "Why is this target blocked?"
+    ]
+  }
+}

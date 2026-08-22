@@ -1,0 +1,187 @@
+{
+  "$id": "https://openadam.dev/dependency-engine/slice.result.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "ok"
+        },
+        "kind": {
+          "type": "string",
+          "const": "slice"
+        },
+        "focus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "prerequisites",
+            "dependents",
+            "both"
+          ]
+        },
+        "graph": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "type": "string",
+              "const": "agent-deps/v1"
+            },
+            "nodes": {
+              "minItems": 1,
+              "maxItems": 5000,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema0"
+              }
+            },
+            "requires": {
+              "maxItems": 20000,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema1"
+              }
+            }
+          },
+          "required": [
+            "schema",
+            "nodes",
+            "requires"
+          ],
+          "additionalProperties": false
+        },
+        "receipt": {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "const": "dependency-engine"
+            },
+            "version": {
+              "type": "string",
+              "const": "0.1.0"
+            },
+            "operation": {
+              "type": "string",
+              "enum": [
+                "validate",
+                "resolve",
+                "impact",
+                "slice",
+                "explain"
+              ]
+            },
+            "graph_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "request_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "result_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "engine",
+            "version",
+            "operation",
+            "graph_hash",
+            "request_hash",
+            "result_hash"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "kind",
+        "focus",
+        "direction",
+        "graph",
+        "receipt"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "error"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {}
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "DependencyNodeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "__schema0": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/DependencyNodeId"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "__schema1": {
+      "type": "object",
+      "properties": {
+        "dependent": {
+          "$ref": "#/definitions/DependencyNodeId"
+        },
+        "prerequisite": {
+          "$ref": "#/definitions/DependencyNodeId"
+        }
+      },
+      "required": [
+        "dependent",
+        "prerequisite"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "$id": "https://openadam.dev/dependency-engine/impact.result.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "ok"
+        },
+        "kind": {
+          "type": "string",
+          "const": "impact"
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "direct": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "transitive": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "propagation_layers": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/DependencyNodeId"
+            }
+          }
+        },
+        "receipt": {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "const": "dependency-engine"
+            },
+            "version": {
+              "type": "string",
+              "const": "0.1.0"
+            },
+            "operation": {
+              "type": "string",
+              "enum": [
+                "validate",
+                "resolve",
+                "impact",
+                "slice",
+                "explain"
+              ]
+            },
+            "graph_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "request_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "result_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "engine",
+            "version",
+            "operation",
+            "graph_hash",
+            "request_hash",
+            "result_hash"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "kind",
+        "changed",
+        "direct",
+        "transitive",
+        "propagation_layers",
+        "receipt"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "error"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {}
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "DependencyNodeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    }
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "$id": "https://openadam.dev/dependency-engine/resolve.result.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "ok"
+        },
+        "kind": {
+          "type": "string",
+          "const": "resolution"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "satisfied": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "remaining": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "ready": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "execution_layers": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/DependencyNodeId"
+            }
+          }
+        },
+        "blocked": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "node": {
+                "$ref": "#/definitions/DependencyNodeId"
+              },
+              "by": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/DependencyNodeId"
+                }
+              }
+            },
+            "required": [
+              "node",
+              "by"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "root_blockers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyNodeId"
+          }
+        },
+        "receipt": {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "const": "dependency-engine"
+            },
+            "version": {
+              "type": "string",
+              "const": "0.1.0"
+            },
+            "operation": {
+              "type": "string",
+              "enum": [
+                "validate",
+                "resolve",
+                "impact",
+                "slice",
+                "explain"
+              ]
+            },
+            "graph_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "request_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "result_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "engine",
+            "version",
+            "operation",
+            "graph_hash",
+            "request_hash",
+            "result_hash"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "kind",
+        "targets",
+        "satisfied",
+        "required",
+        "remaining",
+        "ready",
+        "execution_layers",
+        "blocked",
+        "root_blockers",
+        "receipt"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "error"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {}
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "status",
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "DependencyNodeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    }
+  }
+}
