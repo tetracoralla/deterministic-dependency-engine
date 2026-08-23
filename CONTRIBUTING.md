@@ -1,4 +1,4 @@
-# Contributing to Gridlace
+# Contributing to Deterministic Dependency Engine
 
 This repository implements a deterministic dependency-reasoning engine.
 Contributions should preserve one semantic core across the library, CLI, MCP,

@@ -2,17 +2,17 @@
   "name": "@openadam/dependency-engine",
   "version": "0.1.0",
   "private": true,
-  "description": "Gridlace, a deterministic dependency engine for humans and AI agents.",
+  "description": "Deterministic Dependency Engine for humans and AI agents reasoning over declared graphs.",
   "type": "module",
   "license": "Apache-2.0",
   "author": "openAdam",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tetracoralla/Gridlace.git"
+    "url": "git+https://github.com/tetracoralla/deterministic-dependency-engine.git"
   },
-  "homepage": "https://github.com/tetracoralla/Gridlace#readme",
+  "homepage": "https://github.com/tetracoralla/deterministic-dependency-engine#readme",
   "bugs": {
-    "url": "https://github.com/tetracoralla/Gridlace/issues"
+    "url": "https://github.com/tetracoralla/deterministic-dependency-engine/issues"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -31,7 +31,7 @@
   "files": [
     ".codex-plugin",
     ".mcp.json",
-    "design/gridlace-concept.png",
+    "design/deterministic-dependency-engine.png",
     "dist",
     "docs",
     "schemas",
@@ -42,7 +42,6 @@
     "LICENSE",
     "NOTICE",
     "SECURITY.md",
-    "TRADEMARKS.md",
     "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {

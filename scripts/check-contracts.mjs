@@ -21,20 +21,20 @@ assert.equal(manifest.version, "0.1.0");
 assert.equal(manifest.skills, "./skills/");
 assert.equal(manifest.mcpServers, "./.mcp.json");
 assert.deepEqual(manifest.author, { name: "openAdam", url: "https://github.com/tetracoralla" });
-assert.equal(manifest.repository, "https://github.com/tetracoralla/Gridlace");
+assert.equal(manifest.repository, "https://github.com/tetracoralla/deterministic-dependency-engine");
 
 const packageManifest = JSON.parse(await readFile("package.json", "utf8"));
 assert.equal(packageManifest.name, "@openadam/dependency-engine");
 assert.equal(packageManifest.author, "openAdam");
 assert.equal(packageManifest.private, true, "the source package is not published to npm");
-assert.equal(packageManifest.repository?.url, "git+https://github.com/tetracoralla/Gridlace.git");
+assert.equal(packageManifest.repository?.url, "git+https://github.com/tetracoralla/deterministic-dependency-engine.git");
 assert.deepEqual(Object.keys(packageManifest.bin).sort(), [
   "dependency-engine",
   "dependency-engine-http",
   "dependency-engine-mcp",
 ]);
 assert.equal(
-  packageManifest.files.includes("design/gridlace-concept.png"),
+  packageManifest.files.includes("design/deterministic-dependency-engine.png"),
   true,
   "the packaged README image must be included in the distribution",
 );
@@ -42,8 +42,8 @@ assert.equal(
 const contracts = await readFile("src/core/contracts.ts", "utf8");
 const productName = /^export const PRODUCT_NAME = "([^"]+)";$/mu.exec(contracts)?.[1];
 const productSubtitle = /^export const PRODUCT_SUBTITLE = "([^"]+)";$/mu.exec(contracts)?.[1];
-assert.equal(productName, "Gridlace");
-assert.equal(productSubtitle, "A Deterministic Dependency Engine");
+assert.equal(productName, "Deterministic Dependency Engine");
+assert.equal(productSubtitle, "Dependency Reasoning Over Declared Graphs");
 assert.match(contracts, /ENGINE_NAME = "dependency-engine"/u);
 assert.match(contracts, /GRAPH_SCHEMA_VERSION = "agent-deps\/v1"/u);
 assert.equal(manifest.interface.displayName, productName);

@@ -1,13 +1,13 @@
 {
   "name": "graph-dependency-solver",
   "version": "0.1.0",
-  "description": "Gridlace provides deterministic dependency reasoning over declared graphs.",
+  "description": "Deterministic Dependency Engine reasons over explicitly declared dependency graphs.",
   "author": {
     "name": "openAdam",
     "url": "https://github.com/tetracoralla"
   },
   "license": "Apache-2.0",
-  "repository": "https://github.com/tetracoralla/Gridlace",
+  "repository": "https://github.com/tetracoralla/deterministic-dependency-engine",
   "keywords": [
     "dependencies",
     "graph",
@@ -18,9 +18,9 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "Gridlace",
+    "displayName": "Deterministic Dependency Engine",
     "shortDescription": "Resolve blockers, order work, and trace impact.",
-    "longDescription": "Gridlace computes deterministic dependency closure, ready work, execution layers, blockers, impact, relevant subgraphs, and path explanations over relations you declare.",
+    "longDescription": "Deterministic Dependency Engine computes dependency closure, ready work, execution layers, blockers, impact, relevant subgraphs, and path explanations over relations you declare.",
     "developerName": "openAdam",
     "category": "Productivity",
     "capabilities": [

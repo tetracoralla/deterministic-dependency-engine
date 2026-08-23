@@ -1,29 +1,22 @@
-# Gridlace product identity
+# Deterministic Dependency Engine identity
 
 ## Display identity
 
-- Product name: **Gridlace**
-- Subtitle: **A Deterministic Dependency Engine**
-- Spelling: one word with a capital `G`; pronounce it “GRID-lace.”
+- Product name: **Deterministic Dependency Engine**
+- Description: **Dependency Reasoning Over Declared Graphs**
 - Publisher and developer identity: **openAdam**.
 
-The name comes from the image of declared points laced into a changing pattern.
-Moving one relation changes what the whole arrangement makes possible. This is
-a visual association, not a one-to-one mechanism map.
-
-The name does not imply a regular geometric grid, graph discovery, task
-execution, or a visual graph editor. The subtitle carries the product category
-and the product model defines the actual scope.
-
-Gridlace is the human-facing product brand. openAdam identifies the original
-publisher. Neither name replaces the descriptive technical coordinates below;
-see the repository's `TRADEMARKS.md` for brand-use boundaries.
+The project deliberately uses a descriptive identity rather than a separate
+product brand. The name describes the implemented category without implying
+graph discovery, task execution, or a visual graph editor. The product model
+defines the exact scope.
 
 ## Stable technical identifiers
 
-The brand does not replace compatibility-sensitive coordinates. Keep these
-descriptive identifiers stable unless a separate migration is authorized:
+The display-name change does not replace compatibility-sensitive coordinates.
+Keep these identifiers stable unless a separate migration is authorized:
 
+- repository: `tetracoralla/deterministic-dependency-engine`
 - package: `@openadam/dependency-engine`
 - commands: `dependency-engine`, `dependency-engine-mcp`,
   `dependency-engine-http`

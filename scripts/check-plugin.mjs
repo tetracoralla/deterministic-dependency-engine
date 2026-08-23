@@ -5,7 +5,7 @@ const manifest = JSON.parse(await readFile(".codex-plugin/plugin.json", "utf8"))
 assert.equal(manifest.name, "graph-dependency-solver");
 assert.equal(manifest.skills, "./skills/");
 assert.equal(manifest.mcpServers, "./.mcp.json");
-assert.equal(manifest.interface.displayName, "Gridlace");
+assert.equal(manifest.interface.displayName, "Deterministic Dependency Engine");
 assert.ok(Array.isArray(manifest.interface.defaultPrompt));
 
 const mcp = JSON.parse(await readFile(".mcp.json", "utf8"));
@@ -18,6 +18,6 @@ assert.match(skill, /^---\nname: reason-about-dependencies\ndescription: .+\n---
 assert.equal(skill.includes("[TODO"), false);
 assert.match(skill, /dependent.*prerequisite/su);
 assert.match(skill, /never describe it as proof/u);
-assert.match(skill, /Gridlace/u);
+assert.match(skill, /Deterministic Dependency Engine/u);
 
 process.stdout.write("Plugin and product Skill checks passed.\n");

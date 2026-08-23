@@ -1,8 +1,8 @@
-# Gridlace product model
+# Deterministic Dependency Engine product model
 
 ## Purpose
 
-Gridlace is a deterministic reasoning kernel for declared dependency
+Deterministic Dependency Engine is a reasoning kernel for declared dependency
 graphs. A developer or Agent supplies graph structure, separate current facts,
 and a query. The engine computes legality, prerequisite closure, execution
 layers, blockers, impact, minimal relevant subgraphs, and path explanations.

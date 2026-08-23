@@ -1,9 +1,9 @@
 ---
 name: reason-about-dependencies
-description: Resolve prerequisites, ready work, execution order, blockers, change impact, dependency slices, and path explanations with Gridlace over an explicitly declared graph. Use when a task asks who depends on what or why work is blocked; do not use it to infer undeclared relations or solve version/provider alternatives.
+description: Resolve prerequisites, ready work, execution order, blockers, change impact, dependency slices, and path explanations with Deterministic Dependency Engine over an explicitly declared graph. Use when a task asks who depends on what or why work is blocked; do not use it to infer undeclared relations or solve version/provider alternatives.
 ---
 
-# Reason about declared dependencies with Gridlace
+# Reason about declared dependencies with Deterministic Dependency Engine
 
 Call the matching direct tool once. Supply the graph with explicit
 `dependent` and `prerequisite` fields; never translate it to `from` / `to`.
