@@ -1,12 +1,8 @@
-# Gridlace
+# Deterministic Dependency Engine
 
-**A Deterministic Dependency Engine** for humans and AI agents.
+Dependency reasoning over declared graphs for humans and AI agents.
 
-The name evokes points laced into a changing pattern: move one declared
-relation and the consequences across the structure change. It is an image, not
-a claim that the engine uses a regular grid or provides a graph editor.
-
-![Gridlace workspace: a declared dependency graph and its computed release plan](design/gridlace-concept.png)
+![Dependency engine workspace showing a declared graph and computed release plan](design/deterministic-dependency-engine.png)
 
 It answers five questions over relations you declare:
 
@@ -85,8 +81,7 @@ directly to an untrusted network; see [the security policy](SECURITY.md).
 
 Copyright 2026 openAdam. Licensed under the
 [Apache License 2.0](LICENSE). Bundled browser dependencies are documented in
-[the third-party notices](THIRD_PARTY_NOTICES.md). The license does not grant
-rights to the Gridlace or openAdam names; see the [brand policy](TRADEMARKS.md).
+[the third-party notices](THIRD_PARTY_NOTICES.md).
 
 See [the product identity](docs/PRODUCT_IDENTITY.md),
 [product model](docs/PRODUCT_MODEL.md), and

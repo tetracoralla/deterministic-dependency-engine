@@ -7,15 +7,14 @@ const manifest = JSON.parse(await readFile("package.json", "utf8"));
 const lock = JSON.parse(await readFile("package-lock.json", "utf8"));
 const license = await readFile("LICENSE", "utf8");
 const notice = await readFile("NOTICE", "utf8");
-const trademarks = await readFile("TRADEMARKS.md", "utf8");
 const thirdParty = await readFile("THIRD_PARTY_NOTICES.md", "utf8");
 
 assert.deepEqual(manifest.repository, {
   type: "git",
-  url: "git+https://github.com/tetracoralla/Gridlace.git",
+  url: "git+https://github.com/tetracoralla/deterministic-dependency-engine.git",
 });
-assert.equal(manifest.homepage, "https://github.com/tetracoralla/Gridlace#readme");
-assert.equal(manifest.bugs?.url, "https://github.com/tetracoralla/Gridlace/issues");
+assert.equal(manifest.homepage, "https://github.com/tetracoralla/deterministic-dependency-engine#readme");
+assert.equal(manifest.bugs?.url, "https://github.com/tetracoralla/deterministic-dependency-engine/issues");
 
 const tracked = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
 assert.equal(tracked.status, 0, tracked.stderr || "git ls-files failed");
@@ -43,9 +42,10 @@ assert.equal(
 );
 
 const rasterAssets = trackedFiles.filter((path) => /\.(?:gif|jpe?g|png|webp)$/iu.test(path)).sort();
-assert.deepEqual(rasterAssets, ["design/gridlace-concept.png"], "review every tracked raster asset explicitly");
+assert.deepEqual(rasterAssets, ["design/deterministic-dependency-engine.png"], "review every tracked raster asset explicitly");
 
-const oldIdentityPatterns = [
+const staleCurrentIdentityPatterns = [
+  new RegExp(`\\b${["Grid", "lace"].join("")}\\b`, "iu"),
   new RegExp(["Cat", "s Cradle"].join("[’']?"), "iu"),
   new RegExp(["cats", "cradle"].join("-"), "iu"),
   new RegExp(["dependency", "engine", "concept"].join("-"), "iu"),
@@ -73,7 +73,7 @@ for (const path of trackedFiles) {
   if (content.includes(0)) continue;
   const text = content.toString("utf8");
   for (const [category, patterns] of [
-    ["old product identity", oldIdentityPatterns],
+    ["stale current product identity", staleCurrentIdentityPatterns],
     ["local absolute path", localPathPatterns],
     ["likely secret", secretPatterns],
     ["generated Agent work trace", sourceTracePatterns],
@@ -92,8 +92,9 @@ const reachableHistory = spawnSync(
   { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
 );
 assert.equal(reachableHistory.status, 0, reachableHistory.stderr || "git history scan failed");
+// Public history legitimately records former display names. Keep current
+// distributions free of stale identity without rewriting established history.
 for (const [category, patterns] of [
-  ["old product identity", oldIdentityPatterns],
   ["local absolute path", localPathPatterns],
   ["likely secret", secretPatterns],
   ["generated Agent work trace", sourceTracePatterns],
@@ -112,13 +113,7 @@ assert.equal(
   "LICENSE must remain the official Apache License 2.0 text",
 );
 assert.match(notice, /Copyright 2026 openAdam/u);
-assert.match(notice, /^Gridlace$/mu);
-assert.match(trademarks, /Gridlace/u);
-assert.match(trademarks, /openAdam/u);
-assert.match(
-  trademarks,
-  /does not grant\s+permission to use trade names, trademarks, service marks, or product names/u,
-);
+assert.match(notice, /^Deterministic Dependency Engine$/mu);
 function usesForbiddenRegistry(value) {
   if (typeof value !== "string") return false;
   try {
@@ -139,7 +134,7 @@ for (const [path, entry] of Object.entries(lock.packages)) {
   );
 }
 
-for (const required of ["LICENSE", "NOTICE", "TRADEMARKS.md", "THIRD_PARTY_NOTICES.md", "SECURITY.md", "CONTRIBUTING.md"]) {
+for (const required of ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "SECURITY.md", "CONTRIBUTING.md"]) {
   assert.equal(manifest.files.includes(required), true, `${required} must be declared in package files`);
 }
 
@@ -169,7 +164,6 @@ assert.equal(browserAssets.some((file) => file.endsWith(".js")), true, "the brow
 const browserLegalSources = {
   LICENSE: license,
   NOTICE: notice,
-  "TRADEMARKS.md": trademarks,
   "THIRD_PARTY_NOTICES.md": thirdParty,
 };
 for (const [required, source] of Object.entries(browserLegalSources)) {
@@ -185,7 +179,7 @@ assert.equal(packed.status, 0, packed.stderr || "npm pack --dry-run failed");
 const report = JSON.parse(packed.stdout);
 assert.equal(report.length, 1, "npm pack must produce one package report");
 const packedFiles = new Set(report[0].files.map((entry) => entry.path));
-for (const required of ["LICENSE", "NOTICE", "TRADEMARKS.md", "THIRD_PARTY_NOTICES.md", "SECURITY.md", "CONTRIBUTING.md"]) {
+for (const required of ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "SECURITY.md", "CONTRIBUTING.md"]) {
   assert.equal(packedFiles.has(required), true, `${required} is missing from the npm package`);
 }
 

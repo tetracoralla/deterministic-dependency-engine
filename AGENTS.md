@@ -1,7 +1,7 @@
-# Gridlace repository contract
+# Deterministic Dependency Engine repository contract
 
-This repository owns Gridlace, a deterministic dependency-reasoning
-product. Product identity lives in `docs/PRODUCT_IDENTITY.md`; product meaning
+This repository owns a deterministic dependency-reasoning product. Product
+identity lives in `docs/PRODUCT_IDENTITY.md`; product meaning
 lives in `docs/PRODUCT_MODEL.md`; current executable Zod models and tests are
 the runtime authority.
 
