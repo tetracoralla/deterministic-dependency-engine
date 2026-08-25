@@ -17,7 +17,10 @@ that the declared business relations are true.
 
 This repository is deliberately limited to dependency reasoning. It is not a
 general orchestration standard, provider-selection framework, task runner,
-graph discovery system, graph database, or visual graph editor.
+graph discovery system, graph database, or visual graph editor. Its browser
+workspace includes an optional read-only 3D sphere for inspecting the declared
+dependency graph; editing remains explicit JSON and all calculations still use
+the deterministic core.
 
 ## Graph contract
 
@@ -50,6 +53,13 @@ npm ci
 npm run check
 npm run start:ui
 ```
+
+The browser workspace opens on a transparent **Sphere**: declared dependency
+curves and depth-coded nodes form the spatial volume, without a solid globe.
+Rotate, zoom, or focus it; open **Source** for exact JSON and **Analysis** only
+when query controls and results are needed. The viewer lives in a separate
+browser-only chunk. It adds no Agent tools or schema fields and stores no camera
+or layout state in the graph.
 
 After `npm run check`, CLI requests can be run from a clone as operation-specific
 JSON read from standard input or an explicit `--input` file:

@@ -11,14 +11,15 @@ import { EXAMPLE_GRAPH } from "../src/ui/example.js";
 import { HARD_LIMITS, PRODUCT_NAME } from "../src/core/contracts.js";
 
 describe("UI graph input boundary", () => {
-  it("keeps the workspace free of destructive example reset and detached status chrome", () => {
+  it("keeps the sphere primary and reveals analysis only on demand", () => {
     const markup = renderToStaticMarkup(createElement(App));
     expect(markup).toContain(`<h1>${PRODUCT_NAME}</h1>`);
     expect(markup).not.toContain("Load example");
     expect(markup).not.toContain("<footer");
     expect(markup).toContain("5 nodes · 4 relations");
-    expect(markup).toContain(">Run</button>");
-    expect(markup).toContain('aria-label="Run: ');
+    expect(markup).toContain('aria-expanded="false"');
+    expect(markup).toContain(">Analysis</button>");
+    expect(markup).not.toContain(">Run</button>");
     expect(markup).toContain('role="group"');
     expect(markup).toContain('aria-pressed="true"');
     expect(markup).not.toContain('role="tab"');

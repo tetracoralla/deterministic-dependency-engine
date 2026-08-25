@@ -1,5 +1,10 @@
 # Deterministic Dependency Engine repository contract
 
+Before any review, read `docs/REVIEW_CONTRACT.md`. A plain owner request to
+review, audit, 审核, or 复核 invokes that contract end to end; treat it as the
+minimum scope and report `tools-dev workspace escalations` without asking the
+owner for another checklist.
+
 This repository owns a deterministic dependency-reasoning product. Product
 identity lives in `docs/PRODUCT_IDENTITY.md`; product meaning
 lives in `docs/PRODUCT_MODEL.md`; current executable Zod models and tests are
@@ -18,6 +23,14 @@ the runtime authority.
   conflicts, version ranges, provider selection, SAT/SMT, task execution,
   graph discovery, a graph database, or a visual graph editor without a new
   owner requirement.
+- The authorized sphere viewer is a human-only, read-only projection. Keep
+  camera state, coordinates, styles, focus, and rendering details out of the
+  public graph, result, receipt, CLI, HTTP, MCP, and Skill contracts.
+- Keep the transparent sphere as the dominant human surface. Source and
+  Analysis are progressively disclosed exact-data layers, not competing default
+  panels; the sphere must never imply an inferred or persisted spatial truth.
+- Keep canvas chrome as bounded edge controls and overlays, not full-width bars
+  or layout columns that resize the spatial graph.
 - Library, CLI, MCP, HTTP, and UI call the same core operations. Adapters do not
   reimplement graph semantics.
 - MCP accepts inline typed data only. It never resolves Agent-controlled file

@@ -1,13 +1,18 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { byteLength } from "../core/canonical.js";
 import { HARD_LIMITS, PRODUCT_NAME, type DependencyGraph, type EngineResult, type Operation } from "../core/contracts.js";
 import { runOperation } from "../core/engine.js";
 import { CodeEditor } from "./components/CodeEditor.js";
-import { OperationTabs } from "./components/OperationTabs.js";
-import { QueryFields, type QueryState } from "./components/QueryFields.js";
-import { ResultView } from "./components/ResultView.js";
+import { AnalysisPanel } from "./components/AnalysisPanel.js";
+import type { QueryState } from "./components/QueryFields.js";
 import { EXAMPLE_GRAPH, EXAMPLE_SOURCE } from "./example.js";
 import { safeGraphNodes } from "./graph-data.js";
+import { useMediaQuery } from "./use-media-query.js";
+
+const GraphSphere = lazy(async () => {
+  const module = await import("./components/GraphSphere.js");
+  return { default: module.GraphSphere };
+});
 
 const INITIAL_QUERY: QueryState = {
   targets: "release",
@@ -116,6 +121,7 @@ export function parseGraphSource(source: string): GraphSourceParseResult {
 }
 
 type CopyState = "idle" | "copied" | "failed";
+type GraphView = "source" | "sphere";
 
 export function App() {
   const [source, setSource] = useState(EXAMPLE_SOURCE);
@@ -123,13 +129,50 @@ export function App() {
   const [query, setQuery] = useState(INITIAL_QUERY);
   const [completedRun, setCompletedRun] = useState<CompletedRun>(exampleRun);
   const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [graphView, setGraphView] = useState<GraphView>("sphere");
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const copyTimer = useRef<number | undefined>(undefined);
+  const analysisTriggerRef = useRef<HTMLButtonElement>(null);
+  const compactAnalysis = useMediaQuery("(max-width: 900px)");
   const resultIsStale = !signatureEquals(completedRun.signature, source, operation, query);
 
   // Counts follow the source with a small deferral so typing stays responsive on
   // large graphs; the run action itself always parses the current source.
   const deferredSource = useDeferredValue(source);
   const countsSource = useMemo(() => parseGraphSource(deferredSource), [deferredSource]);
+  // Unlike the decorative counts, the spatial view must never open on a
+  // deferred copy immediately after an edit.
+  const currentSphereSource = useMemo(
+    () => graphView === "sphere" ? parseGraphSource(source) : null,
+    [graphView, source],
+  );
+  const sphereState = useMemo(() => {
+    if (graphView !== "sphere") return null;
+    if (currentSphereSource === null) return null;
+    if (currentSphereSource.status === "error") {
+      return {
+        graph: null,
+        executionLayers: null,
+        issueCount: 0,
+        error: currentSphereSource.code === "REQUEST_TOO_LARGE"
+          ? "The dependency graph exceeds the input limit."
+          : "Fix the JSON syntax to open the sphere.",
+      };
+    }
+    const validation = runOperation("validate", { graph: currentSphereSource.graph });
+    if (validation.status === "error") {
+      return { graph: null, executionLayers: null, issueCount: 0, error: validation.error.message };
+    }
+    if (validation.kind !== "validation") {
+      return { graph: null, executionLayers: null, issueCount: 0, error: "Graph validation did not return a viewable graph." };
+    }
+    return {
+      graph: validation.normalized_graph,
+      executionLayers: validation.execution_layers,
+      issueCount: validation.issues.length,
+      error: null,
+    };
+  }, [currentSphereSource, graphView]);
 
   useEffect(() => () => window.clearTimeout(copyTimer.current), []);
 
@@ -173,6 +216,11 @@ export function App() {
     copyTimer.current = window.setTimeout(() => setCopyState("idle"), 1_500);
   };
 
+  const closeAnalysis = useCallback(() => {
+    setAnalysisOpen(false);
+    window.requestAnimationFrame(() => analysisTriggerRef.current?.focus());
+  }, []);
+
   const countsGraph = countsSource.status === "ok" ? countsSource.graph : null;
   const countsGraphShaped = countsGraph !== null && Array.isArray(countsGraph.nodes) && Array.isArray(countsGraph.requires);
   const counts = countsGraphShaped
@@ -186,35 +234,66 @@ export function App() {
     <div className="app" onKeyDown={(event) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         event.preventDefault();
+        setAnalysisOpen(true);
         run();
       }
     }}>
       <header className="topbar">
         <h1>{PRODUCT_NAME}</h1>
       </header>
-      <main className="workspace">
-        <section className="input-panel">
+      <main className={analysisOpen ? "workspace analysis-open" : "workspace"}>
+        <section className="input-panel" inert={analysisOpen && compactAnalysis ? true : undefined}>
           <div className="editor-heading">
-            <h2>Dependency graph</h2>
-            <span className={countsInvalid ? "graph-summary invalid" : "graph-summary"}>{counts}</span>
+            <h2 className="visually-hidden">Dependency graph</h2>
+            <div className="editor-heading-actions">
+              <div className="graph-view-switch" role="group" aria-label="Dependency graph view">
+                <button type="button" aria-pressed={graphView === "source"} onClick={() => setGraphView("source")}>Source</button>
+                <button type="button" aria-pressed={graphView === "sphere"} onClick={() => setGraphView("sphere")}>Sphere</button>
+              </div>
+              <span className={countsInvalid ? "graph-summary invalid" : "graph-summary"}>{counts}</span>
+              <button
+                ref={analysisTriggerRef}
+                className={analysisOpen ? "analysis-toggle active" : "analysis-toggle"}
+                type="button"
+                aria-expanded={analysisOpen}
+                aria-controls="analysis-panel"
+                onClick={() => setAnalysisOpen((open) => !open)}
+              >Analysis</button>
+            </div>
           </div>
-          <CodeEditor value={source} onChange={setSource} />
-          <QueryFields operation={operation} state={query} onChange={setQuery} />
-          <div className="run-region">
-            <OperationTabs value={operation} onChange={(next) => {
+          {graphView === "source" ? (
+            <CodeEditor value={source} onChange={setSource} />
+          ) : (
+            <Suspense fallback={<div className="sphere-loading" role="status">Opening sphere…</div>}>
+              <GraphSphere
+                graph={sphereState?.graph ?? null}
+                executionLayers={sphereState?.executionLayers ?? null}
+                issueCount={sphereState?.issueCount ?? 0}
+                error={sphereState?.error ?? "Preparing the dependency sphere."}
+              />
+            </Suspense>
+          )}
+        </section>
+        {analysisOpen && (
+          <AnalysisPanel
+            modal={compactAnalysis}
+            operation={operation}
+            query={query}
+            result={completedRun.result}
+            labels={completedRun.labels}
+            stale={resultIsStale}
+            copyState={copyState}
+            runLabel={actionLabel(operation)}
+            onOperationChange={(next) => {
               setOperation(next);
               setCopyState("idle");
-            }} />
-            <button className="primary-action" type="button" aria-label={`Run: ${actionLabel(operation)}`} onClick={run}>Run</button>
-          </div>
-        </section>
-        <ResultView
-          result={completedRun.result}
-          labels={completedRun.labels}
-          stale={resultIsStale}
-          onCopy={() => void copy()}
-          copyState={copyState}
-        />
+            }}
+            onQueryChange={setQuery}
+            onRun={run}
+            onCopy={() => void copy()}
+            onClose={closeAnalysis}
+          />
+        )}
       </main>
     </div>
   );
