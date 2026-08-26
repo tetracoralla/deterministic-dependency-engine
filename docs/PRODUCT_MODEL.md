@@ -80,10 +80,14 @@ The TypeScript core owns schemas, normalization, algorithms, receipts, errors,
 and bounds. Library, CLI, MCP stdio, HTTP Worker/server, and React UI are thin
 adapters. MCP and HTTP accept inline JSON only. The CLI may deliberately read a
 human-provided file path. The sphere viewer is isolated in a browser-only chunk
-and performs no background animation; it calls core validation rather than
-reimplementing graph legality or topological semantics. Opening Analysis reveals
-the existing operation, query, action, and result surface without shrinking the
-primary graph until the user asks for it.
+and calls core validation rather than reimplementing graph legality or
+topological semantics. Its in-memory projection preparation avoids serializing
+a second copy of the bounded source graph and does not change any public result
+contract. When visible and unobscured, the sphere drifts gently; a drag directly
+controls it and release continues with damped momentum. Automatic and inertial
+motion stop for reduced-motion users, hidden pages, and the Analysis overlay.
+Opening Analysis reveals the existing operation, query, action, and result
+surface without shrinking the primary graph until the user asks for it.
 
 ## Limits and truth
 

@@ -1,11 +1,6 @@
 import type { SphereModel, SphereNode, SphereVector } from "./sphere-layout.js";
 import { rotateSphereVector } from "./sphere-layout.js";
-
-export interface SphereCamera {
-  yaw: number;
-  pitch: number;
-  zoom: number;
-}
+import type { SphereCamera } from "./sphere-motion.js";
 
 export interface ProjectedSphereNode extends SphereNode {
   screenX: number;

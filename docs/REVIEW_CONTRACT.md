@@ -78,6 +78,14 @@ surfaces rather than full-width bars. Opening the floating Analysis panel must
 leave the canvas dimensions unchanged, with an explicit close action available
 when the originating Analysis control is obscured.
 
+When visible, unobscured, and motion is allowed, the sphere must have a subtle
+idle rotation. Movement below the deliberate drag threshold remains a click and
+must not alter the camera. A completed drag continues from current pointer
+velocity and decays without a release snap; pointer cancellation, lost capture,
+window blur, or visibility changes retain the last visible camera instead of
+restoring an earlier angle. Reduced motion disables idle rotation and inertia
+without removing direct drag, keyboard rotation, zoom, focus, or Reset.
+
 ## Business and experience
 
 Owner acceptance remains separate. The human surface should expose declared

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { byteLength } from "../core/canonical.js";
 import { HARD_LIMITS, PRODUCT_NAME, type DependencyGraph, type EngineResult, type Operation } from "../core/contracts.js";
-import { runOperation } from "../core/engine.js";
+import { prepareGraphProjection, runOperation } from "../core/engine.js";
 import { CodeEditor } from "./components/CodeEditor.js";
 import { AnalysisPanel } from "./components/AnalysisPanel.js";
 import type { QueryState } from "./components/QueryFields.js";
@@ -159,16 +159,13 @@ export function App() {
           : "Fix the JSON syntax to open the sphere.",
       };
     }
-    const validation = runOperation("validate", { graph: currentSphereSource.graph });
+    const validation = prepareGraphProjection({ graph: currentSphereSource.graph });
     if (validation.status === "error") {
       return { graph: null, executionLayers: null, issueCount: 0, error: validation.error.message };
     }
-    if (validation.kind !== "validation") {
-      return { graph: null, executionLayers: null, issueCount: 0, error: "Graph validation did not return a viewable graph." };
-    }
     return {
-      graph: validation.normalized_graph,
-      executionLayers: validation.execution_layers,
+      graph: validation.graph,
+      executionLayers: validation.executionLayers,
       issueCount: validation.issues.length,
       error: null,
     };
@@ -270,6 +267,7 @@ export function App() {
                 executionLayers={sphereState?.executionLayers ?? null}
                 issueCount={sphereState?.issueCount ?? 0}
                 error={sphereState?.error ?? "Preparing the dependency sphere."}
+                motionEnabled={!analysisOpen}
               />
             </Suspense>
           )}

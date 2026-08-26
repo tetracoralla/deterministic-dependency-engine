@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { DependencyGraph } from "../../core/contracts.js";
 import { createSphereModel } from "../sphere-layout.js";
-import { drawSphere, findHitNode, type ProjectedSphereNode, type SphereCamera } from "../sphere-renderer.js";
+import {
+  SphereMotionController,
+  type SpherePointerSample,
+} from "../sphere-motion.js";
+import { drawSphere, findHitNode, type ProjectedSphereNode } from "../sphere-renderer.js";
+import { useMediaQuery } from "../use-media-query.js";
 import { SphereFocusPicker } from "./SphereFocusPicker.js";
 
 interface GraphSphereProps {
@@ -9,56 +14,68 @@ interface GraphSphereProps {
   executionLayers: string[][] | null;
   issueCount: number;
   error: string | null;
+  motionEnabled?: boolean;
 }
 
-interface ActiveDrag {
-  pointerId: number;
-  x: number;
-  y: number;
-  totalDistance: number;
-  initialCamera: SphereCamera;
+function pointerSample(event: PointerEvent): SpherePointerSample {
+  return { x: event.clientX, y: event.clientY, time: event.timeStamp };
 }
 
-const INITIAL_CAMERA: SphereCamera = { yaw: -0.42, pitch: -0.16, zoom: 1 };
-const MIN_ZOOM = 0.62;
-const MAX_ZOOM = 1.55;
-
-function copyCamera(camera: SphereCamera): SphereCamera {
-  return { yaw: camera.yaw, pitch: camera.pitch, zoom: camera.zoom };
+function coalescedSamples(event: ReactPointerEvent<HTMLCanvasElement>): SpherePointerSample[] {
+  const nativeEvent = event.nativeEvent;
+  const samples = typeof nativeEvent.getCoalescedEvents === "function"
+    ? nativeEvent.getCoalescedEvents()
+    : [];
+  return (samples.length > 0 ? samples : [nativeEvent]).map(pointerSample);
 }
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-export function GraphSphere({ graph, executionLayers, issueCount, error }: GraphSphereProps) {
+export function GraphSphere({ graph, executionLayers, issueCount, error, motionEnabled = true }: GraphSphereProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<number | null>(null);
+  const lastFrameTimeRef = useRef<number | null>(null);
   const projectedRef = useRef<ProjectedSphereNode[]>([]);
-  const cameraRef = useRef<SphereCamera>(copyCamera(INITIAL_CAMERA));
-  const dragRef = useRef<ActiveDrag | null>(null);
+  const motionRef = useRef<SphereMotionController>(null!);
+  if (motionRef.current === null) motionRef.current = new SphereMotionController();
   const hoveredRef = useRef<string | null>(null);
   const selectedRef = useRef<string | null>(null);
+  const visibleRef = useRef(typeof document === "undefined" || document.visibilityState !== "hidden");
+  const windowFocusedRef = useRef(typeof document === "undefined" || document.hasFocus());
   const model = useMemo(() => graph === null ? null : createSphereModel(graph, executionLayers), [executionLayers, graph]);
   const modelRef = useRef(model);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [zoomPercent, setZoomPercent] = useState(100);
   const [dragging, setDragging] = useState(false);
   const [canvasAvailable, setCanvasAvailable] = useState(true);
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const motionAllowedRef = useRef(motionEnabled && !reducedMotion);
 
   selectedRef.current = selectedId;
   modelRef.current = model;
+  motionAllowedRef.current = motionEnabled && !reducedMotion;
 
-  const renderNow = useCallback(() => {
+  const renderFrame = useCallback((timestamp: number) => {
     frameRef.current = null;
     const canvas = canvasRef.current;
     const currentModel = modelRef.current;
-    if (canvas === null || currentModel === null) return;
+    if (canvas === null || currentModel === null) {
+      lastFrameTimeRef.current = null;
+      return;
+    }
     const context = canvas.getContext("2d");
     if (context === null) {
       setCanvasAvailable(false);
+      lastFrameTimeRef.current = null;
       return;
     }
+
+    const motion = motionRef.current;
+    const canAnimate = motionAllowedRef.current && visibleRef.current && windowFocusedRef.current;
+    const idlePaused = selectedRef.current !== null || hoveredRef.current !== null;
+    const previousFrame = lastFrameTimeRef.current;
+    if (canAnimate && previousFrame !== null) {
+      motion.advance((timestamp - previousFrame) / 1_000, idlePaused);
+    }
+
     const bounds = canvas.getBoundingClientRect();
     const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
     const pixelWidth = Math.max(1, Math.round(bounds.width * pixelRatio));
@@ -73,35 +90,41 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
       currentModel,
       bounds.width,
       bounds.height,
-      cameraRef.current,
+      motion.camera,
       { selectedId: selectedRef.current, hoveredId: hoveredRef.current },
     );
+
+    if (canAnimate && motion.wantsAnimation(idlePaused)) {
+      lastFrameTimeRef.current = timestamp;
+      frameRef.current = window.requestAnimationFrame(renderFrame);
+    } else {
+      lastFrameTimeRef.current = null;
+    }
   }, []);
 
   const requestRender = useCallback(() => {
-    if (frameRef.current === null) frameRef.current = window.requestAnimationFrame(renderNow);
-  }, [renderNow]);
+    if (frameRef.current === null) frameRef.current = window.requestAnimationFrame(renderFrame);
+  }, [renderFrame]);
 
-  const cancelDrag = useCallback((restore: boolean) => {
-    const active = dragRef.current;
-    if (active === null) return;
-    if (restore) cameraRef.current = copyCamera(active.initialCamera);
-    dragRef.current = null;
+  const cancelDrag = useCallback(() => {
+    const motion = motionRef.current;
+    const pointerId = motion.activePointerId;
+    if (!motion.cancelDrag()) return;
     const canvas = canvasRef.current;
-    if (canvas?.hasPointerCapture(active.pointerId)) canvas.releasePointerCapture(active.pointerId);
+    if (pointerId !== null && canvas?.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
     setDragging(false);
     requestRender();
   }, [requestRender]);
 
   const setZoom = useCallback((zoom: number) => {
-    cameraRef.current.zoom = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
-    setZoomPercent(Math.round(cameraRef.current.zoom * 100));
+    const appliedZoom = motionRef.current.setZoom(zoom);
+    setZoomPercent(Math.round(appliedZoom * 100));
     requestRender();
   }, [requestRender]);
 
   const resetView = useCallback(() => {
-    cancelDrag(false);
-    cameraRef.current = copyCamera(INITIAL_CAMERA);
+    cancelDrag();
+    motionRef.current.reset();
     hoveredRef.current = null;
     setSelectedId(null);
     setZoomPercent(100);
@@ -115,13 +138,18 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
   }, [model, requestRender, selectedId]);
 
   useEffect(() => {
+    if (!motionEnabled || reducedMotion) motionRef.current.stopMotion();
+    requestRender();
+  }, [motionEnabled, reducedMotion, requestRender]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas === null) return undefined;
     const observer = new ResizeObserver(requestRender);
     observer.observe(canvas);
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
-      setZoom(cameraRef.current.zoom * Math.exp(-event.deltaY * 0.0012));
+      setZoom(motionRef.current.camera.zoom * Math.exp(-event.deltaY * 0.0012));
     };
     canvas.addEventListener("wheel", handleWheel, { passive: false });
     requestRender();
@@ -130,16 +158,38 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
       canvas.removeEventListener("wheel", handleWheel);
       if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
+      lastFrameTimeRef.current = null;
     };
   }, [requestRender, setZoom]);
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "hidden") cancelDrag(true);
+      visibleRef.current = document.visibilityState !== "hidden";
+      if (!visibleRef.current) {
+        cancelDrag();
+        motionRef.current.stopMotion();
+      }
+      requestRender();
+    };
+    const handleWindowBlur = () => {
+      windowFocusedRef.current = false;
+      cancelDrag();
+      motionRef.current.stopMotion();
+      requestRender();
+    };
+    const handleWindowFocus = () => {
+      windowFocusedRef.current = true;
+      requestRender();
     };
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, [cancelDrag]);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [cancelDrag, requestRender]);
 
   if (graph === null || model === null) {
     return (
@@ -162,7 +212,7 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
   const nodeTerm = model.nodes.length === 1 ? "node" : "nodes";
   const relationTerm = model.relationCount === 1 ? "relation" : "relations";
 
-  const hitNode = (event: React.PointerEvent<HTMLCanvasElement>): ProjectedSphereNode | null => {
+  const hitNode = (event: ReactPointerEvent<HTMLCanvasElement>): ProjectedSphereNode | null => {
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - bounds.left;
     const y = event.clientY - bounds.top;
@@ -174,9 +224,9 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
       <div className="sphere-toolbar">
         <SphereFocusPicker nodes={model.nodes} selectedId={selectedId} onSelect={setSelectedId} />
         <div className="sphere-zoom" aria-label="Sphere zoom controls">
-          <button type="button" aria-label="Zoom out" onClick={() => setZoom(cameraRef.current.zoom - 0.1)}>−</button>
+          <button type="button" aria-label="Zoom out" onClick={() => setZoom(motionRef.current.camera.zoom - 0.1)}>−</button>
           <output aria-live="polite">{zoomPercent}%</output>
-          <button type="button" aria-label="Zoom in" onClick={() => setZoom(cameraRef.current.zoom + 0.1)}>+</button>
+          <button type="button" aria-label="Zoom in" onClick={() => setZoom(motionRef.current.camera.zoom + 0.1)}>+</button>
         </div>
         <button className="sphere-reset" type="button" onClick={resetView}>Reset</button>
       </div>
@@ -188,29 +238,31 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
             tabIndex={0}
             role="img"
             aria-describedby="sphere-controls"
-            title="Drag to rotate · scroll to zoom · select a point to inspect"
-            aria-label={`Interactive 3D dependency sphere with ${model.nodes.length} ${nodeTerm} and ${model.relationCount} ${relationTerm}. Drag to rotate, scroll to zoom, or use the focus control.`}
-            onBlur={() => cancelDrag(true)}
+            title="Drag to rotate · release to glide · scroll to zoom · select a point to inspect"
+            aria-label={`Interactive 3D dependency sphere with ${model.nodes.length} ${nodeTerm} and ${model.relationCount} ${relationTerm}. Drag to rotate, release to glide, scroll to zoom, or use the focus control.`}
             onKeyDown={(event) => {
               const rotationStep = event.shiftKey ? 0.2 : 0.1;
               if (event.key === "Escape") {
                 event.preventDefault();
-                if (dragRef.current !== null) cancelDrag(true);
-                else setSelectedId(null);
+                if (motionRef.current.dragging) cancelDrag();
+                else {
+                  motionRef.current.stopMotion();
+                  setSelectedId(null);
+                }
               } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
                 event.preventDefault();
-                cameraRef.current.yaw += event.key === "ArrowLeft" ? -rotationStep : rotationStep;
+                motionRef.current.rotate(event.key === "ArrowLeft" ? -rotationStep : rotationStep, 0);
                 requestRender();
               } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
                 event.preventDefault();
-                cameraRef.current.pitch = clamp(cameraRef.current.pitch + (event.key === "ArrowUp" ? -rotationStep : rotationStep), -1.35, 1.35);
+                motionRef.current.rotate(0, event.key === "ArrowUp" ? -rotationStep : rotationStep);
                 requestRender();
               } else if (event.key === "+" || event.key === "=") {
                 event.preventDefault();
-                setZoom(cameraRef.current.zoom + 0.1);
+                setZoom(motionRef.current.camera.zoom + 0.1);
               } else if (event.key === "-" || event.key === "_") {
                 event.preventDefault();
-                setZoom(cameraRef.current.zoom - 0.1);
+                setZoom(motionRef.current.camera.zoom - 0.1);
               } else if (event.key === "0") {
                 event.preventDefault();
                 resetView();
@@ -218,48 +270,46 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
             }}
             onPointerDown={(event) => {
               if (event.button !== 0) return;
+              event.currentTarget.focus({ preventScroll: true });
               event.currentTarget.setPointerCapture(event.pointerId);
-              dragRef.current = {
-                pointerId: event.pointerId,
-                x: event.clientX,
-                y: event.clientY,
-                totalDistance: 0,
-                initialCamera: copyCamera(cameraRef.current),
-              };
+              hoveredRef.current = null;
+              motionRef.current.beginDrag(event.pointerId, pointerSample(event.nativeEvent));
               setDragging(true);
-            }}
-            onPointerMove={(event) => {
-              const active = dragRef.current;
-              if (active === null || active.pointerId !== event.pointerId) {
-                const hovered = hitNode(event)?.id ?? null;
-                if (hovered !== hoveredRef.current) {
-                  hoveredRef.current = hovered;
-                  requestRender();
-                }
-                return;
-              }
-              const deltaX = event.clientX - active.x;
-              const deltaY = event.clientY - active.y;
-              active.x = event.clientX;
-              active.y = event.clientY;
-              active.totalDistance += Math.hypot(deltaX, deltaY);
-              cameraRef.current.yaw += deltaX * 0.008;
-              cameraRef.current.pitch = clamp(cameraRef.current.pitch + deltaY * 0.008, -1.35, 1.35);
               requestRender();
             }}
+            onPointerMove={(event) => {
+              const motion = motionRef.current;
+              if (motion.dragging) {
+                let changed = false;
+                for (const sample of coalescedSamples(event)) {
+                  if (motion.updateDrag(event.pointerId, sample)) changed = true;
+                }
+                if (changed) requestRender();
+                return;
+              }
+              const hovered = hitNode(event)?.id ?? null;
+              if (hovered !== hoveredRef.current) {
+                hoveredRef.current = hovered;
+                requestRender();
+              }
+            }}
             onPointerUp={(event) => {
-              const active = dragRef.current;
-              if (active === null || active.pointerId !== event.pointerId) return;
-              const wasClick = active.totalDistance < 5;
-              dragRef.current = null;
+              const motion = motionRef.current;
+              const finalSample = coalescedSamples(event).at(-1) ?? pointerSample(event.nativeEvent);
+              const completion = motion.endDrag(event.pointerId, finalSample);
+              if (completion === "none") return;
               setDragging(false);
               if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-              if (wasClick) setSelectedId(hitNode(event)?.id ?? null);
+              if (completion === "click") setSelectedId(hitNode(event)?.id ?? null);
+              else {
+                hoveredRef.current = null;
+                requestRender();
+              }
             }}
-            onPointerCancel={() => cancelDrag(true)}
-            onLostPointerCapture={() => cancelDrag(true)}
+            onPointerCancel={cancelDrag}
+            onLostPointerCapture={cancelDrag}
             onPointerLeave={() => {
-              if (dragRef.current === null && hoveredRef.current !== null) {
+              if (!motionRef.current.dragging && hoveredRef.current !== null) {
                 hoveredRef.current = null;
                 requestRender();
               }
@@ -271,7 +321,7 @@ export function GraphSphere({ graph, executionLayers, issueCount, error }: Graph
             <span>Use the focus control to inspect declared dependency counts.</span>
           </div>
         )}
-        <p id="sphere-controls" className="visually-hidden">Use arrow keys to rotate, plus and minus to zoom, zero to reset, and Escape to cancel a drag or clear focus.</p>
+        <p id="sphere-controls" className="visually-hidden">Use arrow keys to rotate, plus and minus to zoom, zero to reset, and Escape to stop a drag or clear focus. Releasing a drag continues with gentle momentum. Automatic motion is disabled when reduced motion is requested.</p>
         {warning !== null && <p className="sphere-warning">{warning}</p>}
       </div>
       {selectedNode !== null && (

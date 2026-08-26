@@ -434,7 +434,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .result-section { padding: 0 0 30px; border-bottom: 1px solid var(--border); }
 .result-section + .result-section { padding-top: 27px; }
 .result-section:last-child { border-bottom: 0; }
-.result-section h3, .generic-result h3 { margin: 0 0 24px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.result-section h3, .generic-result h3, .error-result h3 { margin: 0 0 24px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
 .execution-list { margin: 0; padding: 0; display: grid; gap: 20px; list-style: none; font-family: "SFMono-Regular", Consolas, monospace; font-size: 18px; }
 .execution-list li { display: grid; grid-template-columns: 56px 1fr; }
 .step-number { color: var(--accent); }
@@ -444,6 +444,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .generic-result { display: grid; gap: 0; }
 .generic-result section { padding: 0 0 28px; margin: 0 0 26px; border-bottom: 1px solid var(--border); }
 .generic-result p, .error-result p { margin: 0; color: #d8dada; font-family: "SFMono-Regular", Consolas, monospace; font-size: 17px; line-height: 1.6; }
+.error-result section { margin-top: 28px; }
 .generic-result .relation + .relation { margin-top: 10px; }
 .issue-list { margin: 0; padding: 0; display: grid; gap: 18px; list-style: none; }
 .issue-list li { display: grid; gap: 7px; }

@@ -3,7 +3,9 @@ import type {
   CalculationReceipt,
   DependencyGraph,
   EngineResult,
+  ErrorResult,
   ExplainRequest,
+  GraphIssue,
   ImpactExplanationResult,
   ImpactRequest,
   ImpactResult,
@@ -150,6 +152,43 @@ export function runOperation(
   startedAt = performance.now(),
 ): EngineResult {
   return runOperationInternal(operation, input, startedAt);
+}
+
+export type GraphProjectionResult = ErrorResult | {
+  status: "ok";
+  graph: DependencyGraph;
+  executionLayers: string[][] | null;
+  issues: GraphIssue[];
+};
+
+/**
+ * Internal browser-view preparation. It uses the same validation operation and
+ * request/deadline checks, but returns in-memory references instead of
+ * serializing a second copy of the graph into a public calculation result.
+ */
+export function prepareGraphProjection(
+  input: unknown,
+  startedAt = performance.now(),
+): GraphProjectionResult {
+  let budget = new ExecutionBudget(undefined, startedAt);
+  try {
+    budget = new ExecutionBudget(executionLimitsFromInput(input), startedAt);
+    assertRequestSize(input);
+    budget.check();
+    const request = ValidateRequestSchema.parse(input);
+    const compiled = getCompiledGraph((request as { graph: DependencyGraph }).graph);
+    budget.check();
+    const validation = validateGraph(request, compiled, budget);
+    budget.check();
+    return {
+      status: "ok",
+      graph: validation.normalized_graph,
+      executionLayers: validation.execution_layers,
+      issues: validation.issues,
+    };
+  } catch (error) {
+    return boundedErrorResult(error, budget.maxResponseBytes);
+  }
 }
 
 /**

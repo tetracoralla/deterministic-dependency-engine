@@ -8,8 +8,13 @@ interface CodeEditorProps {
 
 const JSON_TOKEN = /("(?:\\.|[^"\\])*")(?=\s*:)|("(?:\\.|[^"\\])*")|\b(true|false|null)\b|(-?\d+(?:\.\d+)?)/gu;
 
-/** Beyond this many lines, token spans cost more than they are worth; render plain text. */
+/** Beyond either bound, token spans cost more than they are worth; render plain text. */
 const HIGHLIGHT_MAX_LINES = 4_000;
+const HIGHLIGHT_MAX_CHARACTERS = 32_768;
+
+export function shouldHighlightSource(value: string, lineCount: number): boolean {
+  return value.length <= HIGHLIGHT_MAX_CHARACTERS && lineCount <= HIGHLIGHT_MAX_LINES;
+}
 
 const HighlightedLine = memo(function HighlightedLine({ line }: { line: string }) {
   const children: ReactNode[] = [];
@@ -34,7 +39,7 @@ export const CodeEditor = memo(function CodeEditor({ value, onChange }: CodeEdit
     [sourceLines.length],
   );
   const highlighted = useMemo(() => {
-    if (sourceLines.length > HIGHLIGHT_MAX_LINES) return value;
+    if (!shouldHighlightSource(value, sourceLines.length)) return value;
     return sourceLines.map((line, lineIndex) => (
       <Fragment key={lineIndex}>
         <HighlightedLine line={line} />

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { runOperation } from "../src/core/engine.js";
+import { prepareGraphProjection, runOperation } from "../src/core/engine.js";
 import { App, parseGraphSource, parseNodeIds, queryEquals } from "../src/ui/App.js";
-import { CodeEditor } from "../src/ui/components/CodeEditor.js";
+import { CodeEditor, shouldHighlightSource } from "../src/ui/components/CodeEditor.js";
 import { QueryFields, type QueryState } from "../src/ui/components/QueryFields.js";
 import { ResultView } from "../src/ui/components/ResultView.js";
 import { safeGraphNodes } from "../src/ui/graph-data.js";
@@ -31,6 +31,14 @@ describe("UI graph input boundary", () => {
     const highlighted = markup.match(/<pre aria-hidden="true"[^>]*>([\s\S]*?)<\/pre>/u)?.[1];
     expect(highlighted).toBeDefined();
     expect(highlighted?.split("\n")).toHaveLength(3);
+  });
+
+  it("falls back to one plain text node for a large minified source", () => {
+    const source = `{"nodes":[${Array.from({ length: 4_000 }, (_, index) => `{"id":"n${index}"}`).join(",")} ]}`;
+    expect(source.length).toBeGreaterThan(32_768);
+    expect(shouldHighlightSource(source, 1)).toBe(false);
+    const markup = renderToStaticMarkup(createElement(CodeEditor, { value: source, onChange: () => undefined }));
+    expect(markup).not.toContain('class="json-key"');
   });
 
   it("recognizes a query restored to the completed values", () => {
@@ -113,6 +121,39 @@ describe("UI graph input boundary", () => {
     expect(markup).toContain("DEPENDENCY_CYCLE");
     expect(markup).toContain("Dependency cycle:");
     expect(markup).toContain("a → b → a");
+  });
+
+  it("shows bounded structural request issues with their paths", () => {
+    const result = runOperation("validate", {
+      graph: { schema: "agent-deps/v1", nodes: {}, requires: [] },
+    });
+    const markup = renderToStaticMarkup(createElement(ResultView, {
+      result,
+      labels: new Map(),
+      stale: false,
+      onCopy: () => undefined,
+      copyState: "idle",
+    }));
+    expect(markup).toContain("INVALID_REQUEST");
+    expect(markup).toContain("invalid_type · graph.nodes");
+    expect(markup).toContain("expected array, received object");
+  });
+
+  it("prepares an in-memory sphere projection when a duplicate public validation result would overflow", () => {
+    const nodes = Array.from({ length: 4_000 }, (_, index) => ({ id: `n${index}` }));
+    const graph = {
+      schema: "agent-deps/v1" as const,
+      nodes,
+      requires: nodes.slice(1).map((node, index) => ({ dependent: node.id, prerequisite: `n${index}` })),
+    };
+    expect(runOperation("validate", { graph })).toMatchObject({ status: "error", error: { code: "RESPONSE_TOO_LARGE" } });
+    const projection = prepareGraphProjection({ graph });
+    expect(projection.status).toBe("ok");
+    if (projection.status === "ok") {
+      expect(projection.graph.nodes).toHaveLength(4_000);
+      expect(projection.executionLayers).toHaveLength(4_000);
+      expect(projection.issues).toEqual([]);
+    }
   });
 
   it("accepts one declared opaque id containing commas", () => {
