@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import type { DependencyGraph } from "../src/core/contracts.js";
 import { GraphSphere } from "../src/ui/components/GraphSphere.js";
 import { MAX_FOCUS_OPTIONS, searchFocusNodes } from "../src/ui/components/SphereFocusPicker.js";
-import { createSphereModel, MAX_OVERVIEW_RELATIONS, rotateSphereVector } from "../src/ui/sphere-layout.js";
+import { createSphereModel, MAX_OVERVIEW_RELATIONS, rotateSphereVector, type SphereVector } from "../src/ui/sphere-layout.js";
 import { SPHERE_INITIAL_CAMERA, SphereMotionController } from "../src/ui/sphere-motion.js";
-import { findHitNode, type ProjectedSphereNode } from "../src/ui/sphere-renderer.js";
+import { drawSphere, findHitNode, projectSpherePoint, type ProjectedSphereNode } from "../src/ui/sphere-renderer.js";
 
 const GRAPH: DependencyGraph = {
   schema: "agent-deps/v1",
@@ -205,5 +205,84 @@ describe("dependency sphere motion", () => {
     expect(motion.camera).toEqual(visibleCamera);
     expect(motion.hasInertia).toBe(false);
     expect(motion.endDrag(7)).toBe("none");
+  });
+});
+
+function recordingContext(): { context: CanvasRenderingContext2D; ops: string[] } {
+  const ops: string[] = [];
+  const gradient = { addColorStop: () => undefined };
+  const context = {
+    clearRect() { ops.push("clear"); },
+    setTransform() { /* transform state is not compared */ },
+    createRadialGradient: () => gradient,
+    beginPath() { /* grouping only */ },
+    arc(x: number, y: number, radius: number) { ops.push(`arc ${x.toFixed(4)} ${y.toFixed(4)} ${radius.toFixed(4)}`); },
+    fill() { /* covered by the path ops above */ },
+    stroke() { /* covered by the path ops above */ },
+    moveTo(x: number, y: number) { ops.push(`move ${x.toFixed(4)} ${y.toFixed(4)}`); },
+    lineTo(x: number, y: number) { ops.push(`line ${x.toFixed(4)} ${y.toFixed(4)}`); },
+    closePath() { /* grouping only */ },
+    fillRect(x: number, y: number, w: number, h: number) { ops.push(`rect ${x.toFixed(4)} ${y.toFixed(4)} ${w.toFixed(4)} ${h.toFixed(4)}`); },
+    fillText(text: string, x: number, y: number) { ops.push(`text ${text} ${x.toFixed(4)} ${y.toFixed(4)}`); },
+    measureText: () => ({ width: 10 }),
+    fillStyle: null,
+    strokeStyle: null,
+    lineWidth: 0,
+    font: "",
+    textBaseline: "",
+  } as unknown as CanvasRenderingContext2D;
+  return { context, ops };
+}
+
+function drawOps(model: ReturnType<typeof createSphereModel>): string[] {
+  const { context, ops } = recordingContext();
+  drawSphere(context, model, 1280, 720, SPHERE_INITIAL_CAMERA, { selectedId: null, hoveredId: null });
+  return ops;
+}
+
+describe("sphere renderer frame-cost refactor keeps output identical", () => {
+  it("projects hoisted rotation identically to rotateSphereVector plus perspective", () => {
+    const samples: SphereVector[] = [
+      { x: 0, y: 0, z: 1 },
+      { x: 1, y: 0, z: 0 },
+      { x: 0, y: 1, z: 0 },
+      { x: -1, y: 0, z: 0 },
+      { x: -0.577, y: 0.577, z: 0.577 },
+      { x: 0.3, y: -0.8, z: 0.52 },
+    ];
+    const cameras = [SPHERE_INITIAL_CAMERA, { yaw: 2.1, pitch: 1.2, zoom: 1.3 }];
+    for (const camera of cameras) {
+      for (const point of samples) {
+        const projected = projectSpherePoint(point, camera, 640, 360, 300);
+        const rotated = rotateSphereVector(point, camera.yaw, camera.pitch);
+        const perspective = 1 + rotated.z * 0.1;
+        expect(projected.x).toBe(640 + rotated.x * 300 * perspective);
+        expect(projected.y).toBe(360 - rotated.y * 300 * perspective);
+        expect(projected.z).toBe(rotated.z);
+      }
+    }
+  });
+
+  it("renders equal models identically regardless of relation object identity or cache hits", () => {
+    const graphB = JSON.parse(JSON.stringify(GRAPH)) as DependencyGraph;
+    const modelA = createSphereModel(GRAPH, null);
+    const modelB = createSphereModel(graphB, null);
+    const first = drawOps(modelA);
+    expect(drawOps(modelB)).toEqual(first);
+    expect(drawOps(modelA)).toEqual(first);
+    expect(first.some((op) => op.startsWith("move ") || op.startsWith("line "))).toBe(true);
+  });
+
+  it("does not reuse relation curves across models with different node positions", () => {
+    const layers = [["schema"], ["backend"], ["release"]];
+    const fallback = createSphereModel(GRAPH, null);
+    const layeredWithSharedRelations = createSphereModel(GRAPH, layers);
+    const layeredWithFreshRelations = createSphereModel(
+      JSON.parse(JSON.stringify(GRAPH)) as DependencyGraph,
+      layers,
+    );
+
+    drawOps(fallback);
+    expect(drawOps(layeredWithSharedRelations)).toEqual(drawOps(layeredWithFreshRelations));
   });
 });

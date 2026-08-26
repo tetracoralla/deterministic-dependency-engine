@@ -1,5 +1,5 @@
+import type { DependencyRelation } from "../core/contracts.js";
 import type { SphereModel, SphereNode, SphereVector } from "./sphere-layout.js";
-import { rotateSphereVector } from "./sphere-layout.js";
 import type { SphereCamera } from "./sphere-motion.js";
 
 export interface ProjectedSphereNode extends SphereNode {
@@ -14,20 +14,61 @@ export interface SphereRenderState {
   hoveredId: string | null;
 }
 
-function projectVector(
+interface RotatedPoint {
+  x: number;
+  y: number;
+  z: number;
+}
+
+interface RotationConstants {
+  yawCos: number;
+  yawSin: number;
+  pitchCos: number;
+  pitchSin: number;
+}
+
+function rotationConstants(camera: SphereCamera): RotationConstants {
+  return {
+    yawCos: Math.cos(camera.yaw),
+    yawSin: Math.sin(camera.yaw),
+    pitchCos: Math.cos(camera.pitch),
+    pitchSin: Math.sin(camera.pitch),
+  };
+}
+
+/**
+ * Same expressions and operand order as sphere-layout's rotateSphereVector so
+ * hoisting the trigonometry out of the per-point loop stays numerically
+ * identical while the sphere rotates every frame.
+ */
+function projectPoint(
+  point: SphereVector,
+  rotation: RotationConstants,
+  centerX: number,
+  centerY: number,
+  sphereRadius: number,
+  out: RotatedPoint,
+): void {
+  const yawX = point.x * rotation.yawCos + point.z * rotation.yawSin;
+  const yawZ = -point.x * rotation.yawSin + point.z * rotation.yawCos;
+  const rotatedZ = point.y * rotation.pitchSin + yawZ * rotation.pitchCos;
+  const perspective = 1 + rotatedZ * 0.1;
+  out.x = centerX + yawX * sphereRadius * perspective;
+  out.y = centerY - (point.y * rotation.pitchCos - yawZ * rotation.pitchSin) * sphereRadius * perspective;
+  out.z = rotatedZ;
+}
+
+/** Reference single-point projection used by equivalence tests. */
+export function projectSpherePoint(
   point: SphereVector,
   camera: SphereCamera,
   centerX: number,
   centerY: number,
   sphereRadius: number,
-): { x: number; y: number; z: number } {
-  const rotated = rotateSphereVector(point, camera.yaw, camera.pitch);
-  const perspective = 1 + rotated.z * 0.1;
-  return {
-    x: centerX + rotated.x * sphereRadius * perspective,
-    y: centerY - rotated.y * sphereRadius * perspective,
-    z: rotated.z,
-  };
+): RotatedPoint {
+  const out = { x: 0, y: 0, z: 0 };
+  projectPoint(point, rotationConstants(camera), centerX, centerY, sphereRadius, out);
+  return out;
 }
 
 function drawAmbientSpace(
@@ -46,7 +87,7 @@ function drawAmbientSpace(
   context.fill();
 }
 
-function surfaceCurve(from: SphereVector, to: SphereVector): SphereVector[] {
+function slerpPoints(from: SphereVector, to: SphereVector): SphereVector[] {
   const dot = Math.min(1, Math.max(-1, from.x * to.x + from.y * to.y + from.z * to.z));
   const angle = Math.acos(dot);
   const sine = Math.sin(angle);
@@ -63,15 +104,65 @@ function surfaceCurve(from: SphereVector, to: SphereVector): SphereVector[] {
   });
 }
 
+// World-space arc points depend on both a relation and this model's calculated
+// node positions. Scope the cache to the model so reusing one graph with a
+// different execution-layer projection cannot reuse stale curve geometry.
+const relationCurveCache = new WeakMap<SphereModel, WeakMap<DependencyRelation, readonly SphereVector[]>>();
+
+function relationCurve(
+  model: SphereModel,
+  relation: DependencyRelation,
+  from: SphereVector,
+  to: SphereVector,
+): readonly SphereVector[] {
+  let modelCache = relationCurveCache.get(model);
+  if (modelCache === undefined) {
+    modelCache = new WeakMap();
+    relationCurveCache.set(model, modelCache);
+  }
+  let points = modelCache.get(relation);
+  if (points === undefined) {
+    points = slerpPoints(from, to);
+    modelCache.set(relation, points);
+  }
+  return points;
+}
+
+// drawSphere runs synchronously on one thread, so one reused projection line
+// and one reused point cover every curve and node in a frame.
+const scratchCurve: RotatedPoint[] = [];
+const scratchPoint: RotatedPoint = { x: 0, y: 0, z: 0 };
+
+function projectCurve(
+  points: readonly SphereVector[],
+  rotation: RotationConstants,
+  centerX: number,
+  centerY: number,
+  sphereRadius: number,
+): number {
+  let index = 0;
+  for (const source of points) {
+    let target = scratchCurve[index];
+    if (target === undefined) {
+      target = { x: 0, y: 0, z: 0 };
+      scratchCurve[index] = target;
+    }
+    projectPoint(source, rotation, centerX, centerY, sphereRadius, target);
+    index += 1;
+  }
+  return index;
+}
+
 function drawRelationCurve(
   context: CanvasRenderingContext2D,
-  points: Array<{ x: number; y: number; z: number }>,
+  points: readonly RotatedPoint[],
+  length: number,
   selected: boolean,
 ): void {
   for (const front of [false, true]) {
     context.beginPath();
     let drawing = false;
-    for (let index = 1; index < points.length; index += 1) {
+    for (let index = 1; index < length; index += 1) {
       const previous = points[index - 1];
       const current = points[index];
       if (previous === undefined || current === undefined) continue;
@@ -141,18 +232,23 @@ export function drawSphere(
   const centerY = height / 2;
   const sphereRadius = Math.min(width, height) * 0.43 * camera.zoom;
   drawAmbientSpace(context, centerX, centerY, sphereRadius);
+  const rotation = rotationConstants(camera);
 
   const projectedNodes = model.nodes.map((node): ProjectedSphereNode => {
-    const projected = projectVector(node.position, camera, centerX, centerY, sphereRadius);
+    projectPoint(node.position, rotation, centerX, centerY, sphereRadius, scratchPoint);
     return {
       ...node,
-      screenX: projected.x,
-      screenY: projected.y,
-      depth: projected.z,
-      radius: Math.max(3.5, 5.2 + projected.z * 1.6) * Math.min(1.3, camera.zoom),
+      screenX: scratchPoint.x,
+      screenY: scratchPoint.y,
+      depth: scratchPoint.z,
+      radius: Math.max(3.5, 5.2 + scratchPoint.z * 1.6) * Math.min(1.3, camera.zoom),
     };
   });
-  const byId = new Map(projectedNodes.map((node) => [node.id, node]));
+  // Projected screen coordinates are only needed for arrowheads on the
+  // selected node's relations; positions come from the model itself.
+  const projectedById = state.selectedId === null
+    ? null
+    : new Map(projectedNodes.map((node) => [node.id, node]));
   const selectedRelations = state.selectedId === null
     ? []
     : model.relationsByNode.get(state.selectedId) ?? [];
@@ -166,16 +262,20 @@ export function drawSphere(
     : selectedRelations;
 
   for (const relation of visibleRelations) {
-    const prerequisite = byId.get(relation.prerequisite);
-    const dependent = byId.get(relation.dependent);
+    const prerequisite = model.nodeById.get(relation.prerequisite);
+    const dependent = model.nodeById.get(relation.dependent);
     if (prerequisite === undefined || dependent === undefined) continue;
     const selectedRelation = state.selectedId !== null
       && (relation.prerequisite === state.selectedId || relation.dependent === state.selectedId);
     context.fillStyle = "rgb(215 255 49 / 82%)";
-    const curve = surfaceCurve(prerequisite.position, dependent.position)
-      .map((point) => projectVector(point, camera, centerX, centerY, sphereRadius));
-    drawRelationCurve(context, curve, selectedRelation);
-    if (selectedRelation) drawArrowHead(context, prerequisite, dependent);
+    const curve = relationCurve(model, relation, prerequisite.position, dependent.position);
+    const length = projectCurve(curve, rotation, centerX, centerY, sphereRadius);
+    drawRelationCurve(context, scratchCurve, length, selectedRelation);
+    if (selectedRelation && projectedById !== null) {
+      const from = projectedById.get(relation.prerequisite);
+      const to = projectedById.get(relation.dependent);
+      if (from !== undefined && to !== undefined) drawArrowHead(context, from, to);
+    }
   }
 
   const orderedNodes = [...projectedNodes].sort((left, right) => left.depth - right.depth);
