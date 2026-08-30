@@ -18,6 +18,15 @@ tasks, arbitrate state, or solve alternatives and version constraints.
 
 - Human user: a developer or trained operator pastes a graph, chooses one
   operation, changes its query facts, runs it, and copies the structured result.
+  The workspace opens on a read-only, transparent dependency sphere; exact
+  source and analysis controls are secondary layers opened when needed. The
+  user may rotate, zoom, and focus the same declared nodes and relations without
+  changing them.
+
+The spatial canvas remains continuous edge to edge. Product identity, view
+choice, focus/zoom, and analysis access are compact floating controls around
+the canvas. Analysis is an edge overlay and must not resize or reflow the graph
+behind it.
 - Agent user: an Agent calls one of five direct tools without discovery, then
   consumes the structured result as final calculation output.
 - Dominant route budget: one semantic match and one domain-tool call. Invalid
@@ -58,14 +67,27 @@ keeps structural meaning separate from current completion facts.
 V1 supports conjunctive `A requires B` relations only. Alternatives, conflicts,
 provider selection, version ranges, SAT/SMT, PubGrub, workflow execution,
 automatic repository scanning, graph persistence, and visual graph editing are
-future products or adapters, not hidden V1 features.
+future products or adapters, not hidden V1 features. The browser sphere is a
+human-only, read-only projection of validation output. It has no solid semantic
+surface: dependency curves and depth-coded nodes define a transparent spatial
+volume. Camera position, spatial coordinates, styling, and selection are
+ephemeral presentation state: they are not part of `agent-deps/v1`, engine
+results, receipts, or Agent tools.
 
 ## Surfaces
 
 The TypeScript core owns schemas, normalization, algorithms, receipts, errors,
 and bounds. Library, CLI, MCP stdio, HTTP Worker/server, and React UI are thin
 adapters. MCP and HTTP accept inline JSON only. The CLI may deliberately read a
-human-provided file path.
+human-provided file path. The sphere viewer is isolated in a browser-only chunk
+and calls core validation rather than reimplementing graph legality or
+topological semantics. Its in-memory projection preparation avoids serializing
+a second copy of the bounded source graph and does not change any public result
+contract. When visible and unobscured, the sphere drifts gently; a drag directly
+controls it and release continues with damped momentum. Automatic and inertial
+motion stop for reduced-motion users, hidden pages, and the Analysis overlay.
+Opening Analysis reveals the existing operation, query, action, and result
+surface without shrinking the primary graph until the user asks for it.
 
 ## Limits and truth
 

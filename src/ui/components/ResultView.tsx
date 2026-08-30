@@ -48,11 +48,46 @@ function ResolvePlan({ result, labels }: { result: ResolveResult; labels: Readon
   );
 }
 
+interface RequestIssue {
+  code: string;
+  path: string[];
+  message: string;
+}
+
+function requestIssues(details: unknown): RequestIssue[] {
+  if (details === null || typeof details !== "object") return [];
+  const issues = (details as { issues?: unknown }).issues;
+  if (!Array.isArray(issues)) return [];
+  return issues.flatMap((issue): RequestIssue[] => {
+    if (issue === null || typeof issue !== "object") return [];
+    const candidate = issue as { code?: unknown; path?: unknown; message?: unknown };
+    if (typeof candidate.code !== "string" || typeof candidate.message !== "string") return [];
+    const path = Array.isArray(candidate.path)
+      ? candidate.path.filter((part): part is string | number => typeof part === "string" || typeof part === "number").map(String)
+      : [];
+    return [{ code: candidate.code, path, message: candidate.message }];
+  });
+}
+
 function GenericResult({ result, labels }: { result: Exclude<EngineResult, ResolveResult>; labels: ReadonlyMap<string, string> }) {
   if (result.status === "error") {
+    const issues = requestIssues(result.error.details);
     return (
       <div className="error-result" role="alert">
         <p>{result.error.message}</p>
+        {issues.length > 0 && (
+          <section>
+            <h3>Issues</h3>
+            <ul className="issue-list">
+              {issues.map((issue, index) => (
+                <li key={`${issue.code}-${issue.path.join(".")}-${index}`}>
+                  <code>{issue.code}{issue.path.length > 0 ? ` · ${issue.path.join(".")}` : ""}</code>
+                  <span>{issue.message}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     );
   }

@@ -62,9 +62,35 @@ Validation must expose structural issue codes and messages rather than only a
 valid/invalid summary. Syntactically valid but structurally malformed graph
 JSON must reach core validation without crashing the UI.
 
+Verify the transparent Sphere is the default, dominant surface and does not
+paint a solid globe behind the declared graph. Analysis controls and results
+must be absent until Analysis is opened; opening and closing the overlay must
+preserve the full spatial viewport. Drag and keyboard rotation,
+wheel/button/keyboard zoom, node focus, Escape cancellation, and Reset must
+preserve the source and query. A
+cycle must remain inspectable with an explicit fallback warning; invalid JSON
+must show a recoverable state; dense input must suppress overview links rather
+than attempting to paint every relation. Switch Sphere to Source and back to
+exercise canvas observer, pointer capture, and animation-frame cleanup. Check
+the flow at desktop and mobile widths and inspect the current browser console.
+Product, view, analysis, focus, and zoom controls must remain bounded floating
+surfaces rather than full-width bars. Opening the floating Analysis panel must
+leave the canvas dimensions unchanged, with an explicit close action available
+when the originating Analysis control is obscured.
+
+When visible, unobscured, and motion is allowed, the sphere must have a subtle
+idle rotation. Movement below the deliberate drag threshold remains a click and
+must not alter the camera. A completed drag continues from current pointer
+velocity and decays without a release snap; pointer cancellation, lost capture,
+window blur, or visibility changes retain the last visible camera instead of
+restoring an earlier angle. Reduced motion disables idle rotation and inertia
+without removing direct drag, keyboard rotation, zoom, focus, or Reset.
+
 ## Business and experience
 
 Owner acceptance remains separate. The human surface should expose declared
 graph, query facts, operation, action, and actionable result—not MCP, schema
 catalogs, receipts, model reasoning, implementation metadata, or category
-marketing.
+marketing. The sphere is a read-only spatial inspection surface, not a claim
+that the engine inferred a spatial truth or a replacement for exact structured
+results.

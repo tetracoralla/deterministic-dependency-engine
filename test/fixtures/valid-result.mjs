@@ -12,7 +12,7 @@ export function validResolution() {
     root_blockers: [],
     receipt: {
       engine: "dependency-engine",
-      version: "0.1.0",
+      version: "0.1.1",
       operation: "resolve",
       graph_hash: "0".repeat(64),
       request_hash: "0".repeat(64),

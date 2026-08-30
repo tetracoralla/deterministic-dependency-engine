@@ -1,6 +1,6 @@
 {
   "name": "@openadam/dependency-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Deterministic Dependency Engine for humans and AI agents reasoning over declared graphs.",
   "type": "module",
@@ -15,7 +15,7 @@
     "url": "https://github.com/tetracoralla/deterministic-dependency-engine/issues"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "bin": {
     "dependency-engine": "./dist/adapters/cli.js",
@@ -67,18 +67,18 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
     "@noble/hashes": "2.3.0",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "@types/react": "19.1.10",
-    "@types/react-dom": "19.1.7",
-    "@vitejs/plugin-react": "5.0.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.1.1",
     "tsx": "4.23.12",
     "typescript": "7.0.2",
-    "vite": "7.3.6",
-    "vitest": "4.1.10"
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
   }
 }
