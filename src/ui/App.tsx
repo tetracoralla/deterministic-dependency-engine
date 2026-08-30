@@ -67,6 +67,12 @@ export function queryEquals(left: QueryState, right: QueryState): boolean {
     && left.affected === right.affected;
 }
 
+export function formatGraphCounts(nodeCount: number, relationCount: number): string {
+  const nodeTerm = nodeCount === 1 ? "node" : "nodes";
+  const relationTerm = relationCount === 1 ? "relation" : "relations";
+  return `${nodeCount} ${nodeTerm} · ${relationCount} ${relationTerm}`;
+}
+
 function signatureEquals(left: RunSignature, source: string, operation: Operation, query: QueryState): boolean {
   return left.source === source && left.operation === operation && queryEquals(left.query, query);
 }
@@ -221,7 +227,7 @@ export function App() {
   const countsGraph = countsSource.status === "ok" ? countsSource.graph : null;
   const countsGraphShaped = countsGraph !== null && Array.isArray(countsGraph.nodes) && Array.isArray(countsGraph.requires);
   const counts = countsGraphShaped
-    ? `${countsGraph.nodes.length} nodes · ${countsGraph.requires.length} relations`
+    ? formatGraphCounts(countsGraph.nodes.length, countsGraph.requires.length)
     : countsSource.status === "error"
       ? countsSource.code === "REQUEST_TOO_LARGE" ? "Input too large" : "Invalid JSON"
       : "Invalid graph";

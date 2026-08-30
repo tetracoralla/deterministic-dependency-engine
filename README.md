@@ -43,7 +43,7 @@ Public edges never use ambiguous `from` / `to` keys.
 
 ## Develop
 
-Use Node.js 22 or newer.
+Use Node.js 22.12 or newer.
 
 This repository is the public source distribution. It is not currently
 published to the npm registry.

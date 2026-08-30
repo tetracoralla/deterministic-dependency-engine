@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ENGINE_NAME = "dependency-engine";
-export const ENGINE_VERSION = "0.1.0";
+export const ENGINE_VERSION = "0.1.1";
 export const GRAPH_SCHEMA_VERSION = "agent-deps/v1";
 export const PRODUCT_NAME = "Deterministic Dependency Engine";
 export const PRODUCT_SUBTITLE = "Dependency Reasoning Over Declared Graphs";

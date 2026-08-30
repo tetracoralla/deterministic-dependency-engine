@@ -6,7 +6,7 @@ HTTP, and browser adapters rather than add a parallel execution path.
 
 ## Set up the checkout
 
-Install Node.js 22 or newer, then run:
+Install Node.js 22.12 or newer, then run:
 
 ```sh
 npm ci

@@ -1,6 +1,6 @@
 {
   "name": "graph-dependency-solver",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic Dependency Engine reasons over explicitly declared dependency graphs.",
   "author": {
     "name": "openAdam",

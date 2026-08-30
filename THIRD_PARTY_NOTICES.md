@@ -3,7 +3,7 @@
 The built browser bundle incorporates the following third-party software.
 Packages installed separately by npm retain their own license files.
 
-## React 19.1.1, React DOM 19.1.1, and Scheduler 0.26.0
+## React 19.2.8, React DOM 19.2.8, and Scheduler 0.27.0
 
 MIT License
 

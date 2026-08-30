@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { prepareGraphProjection, runOperation } from "../src/core/engine.js";
-import { App, parseGraphSource, parseNodeIds, queryEquals } from "../src/ui/App.js";
+import { App, formatGraphCounts, parseGraphSource, parseNodeIds, queryEquals } from "../src/ui/App.js";
 import { CodeEditor, shouldHighlightSource } from "../src/ui/components/CodeEditor.js";
 import { QueryFields, type QueryState } from "../src/ui/components/QueryFields.js";
 import { ResultView } from "../src/ui/components/ResultView.js";
@@ -11,6 +11,11 @@ import { EXAMPLE_GRAPH } from "../src/ui/example.js";
 import { HARD_LIMITS, PRODUCT_NAME } from "../src/core/contracts.js";
 
 describe("UI graph input boundary", () => {
+  it("uses singular graph summary terms for one node or relation", () => {
+    expect(formatGraphCounts(1, 1)).toBe("1 node · 1 relation");
+    expect(formatGraphCounts(2, 0)).toBe("2 nodes · 0 relations");
+  });
+
   it("keeps the sphere primary and reveals analysis only on demand", () => {
     const markup = renderToStaticMarkup(createElement(App));
     expect(markup).toContain(`<h1>${PRODUCT_NAME}</h1>`);
