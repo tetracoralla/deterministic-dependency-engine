@@ -20,13 +20,13 @@ const tracked = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
 assert.equal(tracked.status, 0, tracked.stderr || "git ls-files failed");
 const trackedFiles = tracked.stdout.split("\0").filter(Boolean);
 const allowedVendoredArtifacts = [
-  "vendor/openadam-graph-projection-0.3.0.tgz",
-  "vendor/openadam-graph-projection-0.3.0.tgz.sha256",
+  "vendor/openadam-graph-view-compiler-0.3.0.tgz",
+  "vendor/openadam-graph-view-compiler-0.3.0.tgz.sha256",
 ];
 assert.deepEqual(
   trackedFiles.filter((path) => path.startsWith("vendor/")).sort(),
   allowedVendoredArtifacts,
-  "only the current checksummed Graph Projection package may be vendored",
+  "only the current checksummed Graph View Compiler package may be vendored",
 );
 const forbiddenTrackedPaths = [
   /(^|\/)\.DS_Store$/u,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sliceSemanticGraph } from "@openadam/graph-projection/semantic";
+import { sliceSemanticGraph } from "@openadam/graph-view-compiler/semantic";
 import { dependencyGraphToSemanticGraph } from "../src/core/semantic-graph.js";
 import type { DependencyGraph } from "../src/core/contracts.js";
 

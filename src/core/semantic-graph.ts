@@ -2,7 +2,7 @@ import {
   SEMANTIC_GRAPH_VERSION,
   normalizeSemanticGraph,
   type SemanticGraphV1,
-} from "@openadam/graph-projection/semantic";
+} from "@openadam/graph-view-compiler/semantic";
 import { compareIds } from "./canonical.js";
 import type { DependencyGraph } from "./contracts.js";
 

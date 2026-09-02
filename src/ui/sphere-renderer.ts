@@ -159,28 +159,55 @@ function drawRelationCurve(
   length: number,
   selected: boolean,
 ): void {
-  for (const front of [false, true]) {
+  const depthBands = 7;
+  context.lineCap = "round";
+  for (let band = 0; band < depthBands; band += 1) {
     context.beginPath();
     let drawing = false;
+    let hasSegments = false;
     for (let index = 1; index < length; index += 1) {
       const previous = points[index - 1];
       const current = points[index];
       if (previous === undefined || current === undefined) continue;
-      const visible = front ? (previous.z + current.z) / 2 >= 0 : (previous.z + current.z) / 2 < 0;
-      if (!visible) {
+      if (relationDepthBand((previous.z + current.z) / 2, depthBands) !== band) {
         drawing = false;
         continue;
       }
       if (!drawing) context.moveTo(previous.x, previous.y);
       context.lineTo(current.x, current.y);
       drawing = true;
+      hasSegments = true;
     }
-    context.strokeStyle = selected
-      ? front ? "rgb(215 255 49 / 86%)" : "rgb(215 255 49 / 28%)"
-      : front ? "rgb(179 216 207 / 44%)" : "rgb(112 143 137 / 13%)";
-    context.lineWidth = selected ? (front ? 2 : 1.2) : (front ? 1.15 : 0.75);
+    if (!hasSegments) continue;
+    const style = relationDepthStyle(band / (depthBands - 1), selected);
+    context.strokeStyle = style.strokeStyle;
+    context.lineWidth = style.lineWidth;
     context.stroke();
   }
+}
+
+function relationDepthBand(depth: number, bandCount: number): number {
+  const normalized = (Math.max(-1, Math.min(1, depth)) + 1) / 2;
+  return Math.round(normalized * (bandCount - 1));
+}
+
+export function relationDepthStyle(
+  normalizedDepth: number,
+  selected: boolean,
+): { strokeStyle: string; lineWidth: number } {
+  const clamped = Math.max(0, Math.min(1, normalizedDepth));
+  const eased = clamped * clamped * (3 - 2 * clamped);
+  const interpolate = (back: number, front: number) => back + (front - back) * eased;
+  const backColor = selected ? [215, 255, 49] : [112, 143, 137];
+  const frontColor = selected ? backColor : [179, 216, 207];
+  const color = backColor.map((channel, index) =>
+    Math.round(interpolate(channel, frontColor[index] ?? channel)),
+  );
+  const alpha = selected ? interpolate(0.28, 0.86) : interpolate(0.13, 0.44);
+  return {
+    strokeStyle: `rgb(${color[0]} ${color[1]} ${color[2]} / ${Math.round(alpha * 100)}%)`,
+    lineWidth: selected ? interpolate(1.2, 2) : interpolate(0.75, 1.15),
+  };
 }
 
 function drawArrowHead(

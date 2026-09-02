@@ -4,17 +4,17 @@ The built browser bundle incorporates the dependencies identified below unless
 a section says it is present only in the installed dependency tree. Packages
 installed separately by npm retain their own license files.
 
-## @openadam/graph-projection 0.3.0
+## @openadam/graph-view-compiler 0.3.0
 
 Copyright 2026 openAdam. Licensed under the Apache License 2.0. The built
 Sphere consumes its renderer-neutral semantic graph adapter; the two-dimensional
-view compiler is deliberately not imported. Graph Projection does not own
+view compiler is deliberately not imported. Graph View Compiler does not own
 dependency reasoning or three-dimensional rendering.
 
 ## @dagrejs/dagre 3.1.1 and @dagrejs/graphlib 4.0.5
 
-These packages are runtime dependencies of the installed Graph Projection
-package. Dependency Engine imports Graph Projection's semantic-only subpath, so
+These packages are runtime dependencies of the installed Graph View Compiler
+package. Dependency Engine imports Graph View Compiler's semantic-only subpath, so
 they are not incorporated into its current browser bundle.
 
 MIT License. Copyright (c) 2012-2014 Chris Pettitt.
