@@ -19,6 +19,15 @@ assert.equal(manifest.bugs?.url, "https://github.com/tetracoralla/deterministic-
 const tracked = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
 assert.equal(tracked.status, 0, tracked.stderr || "git ls-files failed");
 const trackedFiles = tracked.stdout.split("\0").filter(Boolean);
+const allowedVendoredArtifacts = [
+  "vendor/openadam-graph-projection-0.3.0.tgz",
+  "vendor/openadam-graph-projection-0.3.0.tgz.sha256",
+];
+assert.deepEqual(
+  trackedFiles.filter((path) => path.startsWith("vendor/")).sort(),
+  allowedVendoredArtifacts,
+  "only the current checksummed Graph Projection package may be vendored",
+);
 const forbiddenTrackedPaths = [
   /(^|\/)\.DS_Store$/u,
   /(^|\/)\.env(?:\.|$)/u,
@@ -27,7 +36,8 @@ const forbiddenTrackedPaths = [
 ];
 for (const path of trackedFiles) {
   assert.equal(
-    forbiddenTrackedPaths.some((pattern) => pattern.test(path)),
+    !allowedVendoredArtifacts.includes(path) &&
+      forbiddenTrackedPaths.some((pattern) => pattern.test(path)),
     false,
     `temporary or generated artifact must not be tracked: ${path}`,
   );
