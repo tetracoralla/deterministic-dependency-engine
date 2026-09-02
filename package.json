@@ -66,9 +66,9 @@
     "start:ui": "vite"
   },
   "dependencies": {
-    "@openadam/graph-view-compiler": "file:vendor/openadam-graph-view-compiler-0.3.0.tgz",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@noble/hashes": "2.3.0",
+    "@openadam/graph-view-compiler": "0.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.4.3"

@@ -19,14 +19,11 @@ assert.equal(manifest.bugs?.url, "https://github.com/tetracoralla/deterministic-
 const tracked = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
 assert.equal(tracked.status, 0, tracked.stderr || "git ls-files failed");
 const trackedFiles = tracked.stdout.split("\0").filter(Boolean);
-const allowedVendoredArtifacts = [
-  "vendor/openadam-graph-view-compiler-0.3.0.tgz",
-  "vendor/openadam-graph-view-compiler-0.3.0.tgz.sha256",
-];
+const allowedVendoredArtifacts = [];
 assert.deepEqual(
   trackedFiles.filter((path) => path.startsWith("vendor/")).sort(),
   allowedVendoredArtifacts,
-  "only the current checksummed Graph View Compiler package may be vendored",
+  "published dependencies must resolve from the registry instead of vendored archives",
 );
 const forbiddenTrackedPaths = [
   /(^|\/)\.DS_Store$/u,
