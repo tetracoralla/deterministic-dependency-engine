@@ -1,5 +1,6 @@
 import { compareIds } from "../core/canonical.js";
 import type { DependencyGraph, DependencyRelation } from "../core/contracts.js";
+import { dependencyGraphToSemanticGraph } from "../core/semantic-graph.js";
 
 export interface SphereVector {
   x: number;
@@ -66,7 +67,8 @@ export function createSphereModel(
   graph: DependencyGraph,
   executionLayers: readonly (readonly string[])[] | null,
 ): SphereModel {
-  const declaredNodes = [...graph.nodes].sort((left, right) => compareIds(left.id, right.id));
+  const semanticGraph = dependencyGraphToSemanticGraph(graph);
+  const declaredNodes = semanticGraph.nodes;
   const knownIds = new Set(declaredNodes.map((node) => node.id));
   const layerById = new Map<string, { index: number; position: number; size: number }>();
   if (executionLayers !== null) {
@@ -88,7 +90,11 @@ export function createSphereModel(
         : layeredPosition(layer.position, layer.size, layer.index, executionLayers.length),
     };
   });
-  const relations = graph.requires
+  const relations = semanticGraph.relations
+    .map((relation): DependencyRelation => ({
+      prerequisite: relation.source,
+      dependent: relation.target,
+    }))
     .filter((relation) => knownIds.has(relation.prerequisite) && knownIds.has(relation.dependent))
     .toSorted(relationCompare);
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
