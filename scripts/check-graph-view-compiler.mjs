@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const dependency = "0.3.0";
+const dependency = "0.4.0";
 const manifest = JSON.parse(await readFile("package.json", "utf8"));
 const lock = JSON.parse(await readFile("package-lock.json", "utf8"));
 const locked = lock.packages["node_modules/@openadam/graph-view-compiler"];
