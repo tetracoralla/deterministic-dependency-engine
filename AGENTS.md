@@ -1,9 +1,10 @@
 # Deterministic Dependency Engine repository contract
 
-Before any review, read `docs/REVIEW_CONTRACT.md`. A plain owner request to
-review, audit, 审核, or 复核 invokes that contract end to end; treat it as the
-minimum scope and report `tools-dev workspace escalations` without asking the
-owner for another checklist.
+For a requested review, read `docs/REVIEW_CONTRACT.md` within the requested
+scope and follow the relevant source and dependencies. It records known risks,
+not an exhaustive search plan. Report concrete cross-repository implications
+when found. Review is read-only unless fixes are also requested; this entrypoint
+does not dispatch another reviewer.
 
 This repository owns a deterministic dependency-reasoning product. Product
 identity lives in `docs/PRODUCT_IDENTITY.md`; product meaning
