@@ -6,7 +6,13 @@ import { GraphSphere } from "../src/ui/components/GraphSphere.js";
 import { MAX_FOCUS_OPTIONS, searchFocusNodes } from "../src/ui/components/SphereFocusPicker.js";
 import { createSphereModel, MAX_OVERVIEW_RELATIONS, rotateSphereVector, type SphereVector } from "../src/ui/sphere-layout.js";
 import { SPHERE_INITIAL_CAMERA, SphereMotionController } from "../src/ui/sphere-motion.js";
-import { drawSphere, findHitNode, projectSpherePoint, type ProjectedSphereNode } from "../src/ui/sphere-renderer.js";
+import {
+  drawSphere,
+  findHitNode,
+  projectSpherePoint,
+  relationDepthStyle,
+  type ProjectedSphereNode,
+} from "../src/ui/sphere-renderer.js";
 
 const GRAPH: DependencyGraph = {
   schema: "agent-deps/v1",
@@ -47,6 +53,21 @@ describe("dependency sphere layout", () => {
     for (const node of first.nodes) {
       expect(Object.values(node.position).every(Number.isFinite)).toBe(true);
     }
+  });
+
+  it("opens on issue-carrying declarations instead of throwing", () => {
+    const declared: DependencyGraph = {
+      schema: "agent-deps/v1",
+      nodes: [{ id: "a" }, { id: "a", label: "Duplicate a" }, { id: "b" }],
+      requires: [
+        { dependent: "a", prerequisite: "ghost" },
+        { dependent: "a", prerequisite: "b" },
+      ],
+    };
+    const model = createSphereModel(declared, null);
+    expect(model.nodes.map((node) => node.id)).toEqual(["a", "b"]);
+    expect(model.relations).toEqual([{ dependent: "a", prerequisite: "b" }]);
+    expect(model.relationCount).toBe(2);
   });
 
   it("suppresses a dense overview without discarding declared relation count", () => {
@@ -241,6 +262,19 @@ function drawOps(model: ReturnType<typeof createSphereModel>): string[] {
 }
 
 describe("sphere renderer frame-cost refactor keeps output identical", () => {
+  it("transitions relation emphasis through intermediate depth styles", () => {
+    const back = relationDepthStyle(0, false);
+    const middle = relationDepthStyle(0.5, false);
+    const front = relationDepthStyle(1, false);
+    expect(back).toEqual({ strokeStyle: "rgb(112 143 137 / 13%)", lineWidth: 0.75 });
+    expect(middle).toEqual({ strokeStyle: "rgb(146 180 172 / 29%)", lineWidth: 0.95 });
+    expect(front).toEqual({ strokeStyle: "rgb(179 216 207 / 44%)", lineWidth: 1.15 });
+    expect(relationDepthStyle(0.5, true)).toEqual({
+      strokeStyle: "rgb(215 255 49 / 57%)",
+      lineWidth: 1.6,
+    });
+  });
+
   it("projects hoisted rotation identically to rotateSphereVector plus perspective", () => {
     const samples: SphereVector[] = [
       { x: 0, y: 0, z: 1 },

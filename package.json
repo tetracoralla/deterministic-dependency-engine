@@ -49,7 +49,7 @@
     "build:node": "tsc -p tsconfig.build.json",
     "build:web": "vite build && node scripts/copy-web-legal.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --maxWorkers=2",
     "test:watch": "vitest",
     "schema:generate": "node --import tsx scripts/generate-schemas.ts",
     "schema:check": "node --import tsx scripts/generate-schemas.ts --check",
@@ -58,7 +58,8 @@
     "prepack": "npm run build",
     "plugin:check": "node scripts/check-plugin.mjs",
     "runtime:probe": "node scripts/probe-runtime.mjs",
-    "check": "npm run typecheck && npm test && npm run schema:check && npm run check:contracts && npm run build && npm run check:release && npm run runtime:probe && npm run plugin:check",
+    "check:graph-view-compiler": "node scripts/check-graph-view-compiler.mjs",
+    "check": "npm run check:graph-view-compiler && npm run typecheck && npm test && npm run schema:check && npm run check:contracts && npm run build && npm run check:release && npm run runtime:probe && npm run plugin:check",
     "start": "node --import tsx src/adapters/cli.ts",
     "start:mcp": "node --import tsx src/adapters/mcp.ts",
     "start:http": "node --import tsx src/adapters/http-server.ts",
@@ -67,6 +68,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
     "@noble/hashes": "2.3.0",
+    "@openadam/graph-view-compiler": "0.5.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.4.3"
