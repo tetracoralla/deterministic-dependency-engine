@@ -35,4 +35,27 @@ describe("Dependency Engine semantic graph adapter", () => {
     expect(text).not.toContain("receipt");
     expect(text).not.toContain("position");
   });
+
+  it("projects the closed subset when declarations carry structural issues", () => {
+    const declared: DependencyGraph = {
+      schema: "agent-deps/v1",
+      nodes: [
+        { id: "release", label: "Second release" },
+        { id: "release", label: "Release" },
+        { id: "build" },
+      ],
+      requires: [
+        { dependent: "release", prerequisite: "ghost" },
+        { dependent: "build", prerequisite: "release" },
+      ],
+    };
+    const semantic = dependencyGraphToSemanticGraph(declared);
+    expect(semantic.nodes).toEqual([
+      expect.objectContaining({ id: "build" }),
+      expect.objectContaining({ id: "release", label: "Release" }),
+    ]);
+    expect(semantic.relations).toEqual([
+      expect.objectContaining({ source: "release", target: "build" }),
+    ]);
+  });
 });

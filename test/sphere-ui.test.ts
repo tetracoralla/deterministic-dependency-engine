@@ -55,6 +55,21 @@ describe("dependency sphere layout", () => {
     }
   });
 
+  it("opens on issue-carrying declarations instead of throwing", () => {
+    const declared: DependencyGraph = {
+      schema: "agent-deps/v1",
+      nodes: [{ id: "a" }, { id: "a", label: "Duplicate a" }, { id: "b" }],
+      requires: [
+        { dependent: "a", prerequisite: "ghost" },
+        { dependent: "a", prerequisite: "b" },
+      ],
+    };
+    const model = createSphereModel(declared, null);
+    expect(model.nodes.map((node) => node.id)).toEqual(["a", "b"]);
+    expect(model.relations).toEqual([{ dependent: "a", prerequisite: "b" }]);
+    expect(model.relationCount).toBe(2);
+  });
+
   it("suppresses a dense overview without discarding declared relation count", () => {
     const relations = Array.from({ length: MAX_OVERVIEW_RELATIONS + 1 }, () => ({
       dependent: "release",

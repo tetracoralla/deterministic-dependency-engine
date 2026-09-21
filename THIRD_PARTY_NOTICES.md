@@ -4,7 +4,7 @@ The built browser bundle incorporates the dependencies identified below unless
 a section says it is present only in the installed dependency tree. Packages
 installed separately by npm retain their own license files.
 
-## @openadam/graph-view-compiler 0.4.0
+## @openadam/graph-view-compiler 0.5.0
 
 Copyright 2026 openAdam. Licensed under the Apache License 2.0. The built
 Sphere consumes its renderer-neutral semantic graph adapter; the two-dimensional
